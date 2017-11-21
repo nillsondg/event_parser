@@ -1,0 +1,7 @@
+.idea
+__pycache__
+config.py
+events
+events_desc
+*.pem
+out.html
