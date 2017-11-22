@@ -1,6 +1,7 @@
 import unittest
 from event_desc_parser import *
 import datetime
+import os
 
 
 class TestEventDescParser(unittest.TestCase):
@@ -29,3 +30,18 @@ class TestEventDescParser(unittest.TestCase):
         res = [{"event_date": "2017-11-11", "start_time": "10:00", "end_time": "22:00"},
                {"event_date": "2017-11-12", "start_time": "10:00", "end_time": "22:00"}]
         self.assertEqual(res, prepare_date(self.prepare_two_dates()))
+
+    def test_event_parser(self):
+        os.chdir('../')
+        url = "http://digitaloctober.ru/ru/events/upravlenie_izmeneniyami_obschestvo"
+        event = parse_desc_from_digit_october(url)
+        self.assertTrue("organization_id" in event.keys())
+        self.assertTrue("title" in event.keys())
+        self.assertTrue("dates" in event.keys())
+        self.assertTrue("location" in event.keys())
+        self.assertTrue("price" in event.keys())
+        self.assertTrue("tags" in event.keys())
+        self.assertTrue("detail_info_url" in event.keys())
+        self.assertTrue("public_at" in event.keys())
+        self.assertTrue("image_horizontal" in event.keys())
+        self.assertTrue("filenames" in event.keys())

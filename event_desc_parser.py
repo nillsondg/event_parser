@@ -32,18 +32,18 @@ def parse_digital_october_date(date_str):
     many_days_pattern = re.compile('(\d{1,2})\s*–\s*(\d{1,2}) ([А-Яа-я]*) (\d{4}, \d\d:\d\d)')
 
     if one_day_pattern.match(date_str):
-        month = one_day_pattern.match(date_str)[1]
+        month = one_day_pattern.match(date_str).group(1)
         date_str = date_str.replace(month, str(month_to_num(month)))
         date = datetime.datetime.strptime(date_str, "%d %m %Y, %H:%M")
         end_date = date.replace(day=date.day, hour=22, minute=0, second=0, microsecond=0)
         return [(date, end_date)]
     elif many_days_pattern.match(date_str):
         match = many_days_pattern.match(date_str)
-        first_day = match[1]
-        last_day = match[2]
-        month = match[3]
+        first_day = match.group(1)
+        last_day = match.group(2)
+        month = match.group(3)
         month = month_to_num(month)
-        year_and_time = match[4]
+        year_and_time = match.group(4)
         dates = []
         first_date = None
         for day in range(int(first_day), int(last_day) + 1):
@@ -69,8 +69,8 @@ def prepare_date(dates):
 
 
 def prepare_desc(desc):
-    if len(desc) > 1000:
-        return desc[:1000]
+    if len(desc) > 2000:
+        return desc[:2000]
 
 
 def parse_desc_from_digit_october(url):

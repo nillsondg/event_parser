@@ -10,7 +10,6 @@ import config
 def post_to_evendate(event_desc):
     print("posting " + event_desc['detail_info_url'])
     headers = {'Authorization': config.AUTH_TOKEN}
-    print(event_desc)
     r = requests.post("https://evendate.io/api/v1/events/", data=json.dumps(event_desc), headers=headers)
     print(r.status_code, r.reason)
     if r.status_code == 200:
