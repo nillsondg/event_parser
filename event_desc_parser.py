@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import datetime
 import re
 import base64
+import requests
 
 
 def month_to_num(month):
@@ -99,8 +100,7 @@ def parse_desc_from_digit_october(url):
     title = title_block.xpath('.//h1')[0].text.strip()
     date_raw = title_block.xpath('.//span[@class="date"]')[0].text.strip()
     dates = parse_digital_october_date(date_raw)
-
-    img_url = base_url + title_block.xpath('.//img[@class="img"]')[0].get("src")
+    img_url = title_block.xpath('//meta[@property="og:image"]')[0].get("content")
     format_list = title_block.xpath('.//span[@class="type"]')
     format_str = None
     if len(format_list) > 0:
@@ -118,9 +118,12 @@ def parse_desc_from_digit_october(url):
     if format_str:
         tags.append(format_str)
 
+    img_raw = requests.get(img_url, allow_redirects=True)
+    img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates), "description": prepare_desc(text),
            "location": map_text, "price": price, "tags": tags, "detail_info_url": url,
-           "public_at": get_public_date(), "image_horizontal": get_default_img(),
+           "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': "image.png"}}
     return res
 
@@ -157,12 +160,13 @@ def parse_desc_from_planetarium(url):
             description += BeautifulSoup(tostring(text_elem)).text
 
     price = 500
-    map = "г. Москва, ул.Садовая-Кудринская 5, стр. 1, м. Баррикадная, Краснопресненская"
+    location = "г. Москва, ул.Садовая-Кудринская 5, стр. 1, м. Баррикадная, Краснопресненская"
 
     tags = ["Московский планетариум"]
 
     return {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
             "description": prepare_desc(description),
-            "location": map, "price": price, "tags": tags, "detail_info_url": url,
+            "location": location, "price": price, "tags": tags, "detail_info_url": url,
             "public_at": get_public_date(), "image_horizontal": get_default_img(),
             "filenames": {'horizontal': "image.png"}}
+
