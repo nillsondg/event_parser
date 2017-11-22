@@ -31,16 +31,28 @@ class TestEventDescParser(unittest.TestCase):
                {"event_date": "2017-11-12", "start_time": "10:00", "end_time": "22:00"}]
         self.assertEqual(res, prepare_date(self.prepare_two_dates()))
 
-    def test_event_parser(self):
+    def test_october_parser(self):
         os.chdir('../')
         url = "http://digitaloctober.ru/ru/events/upravlenie_izmeneniyami_obschestvo"
         event = parse_desc_from_digit_october(url)
+        self.check_event(event)
+        os.chdir('tests')
+
+    def test_parse_planetarium(self):
+        os.chdir('../')
+        url = "http://www.planetarium-moscow.ru/billboard/events/detail.php?ID=10076"
+        event = parse_desc_from_planetarium(url)
+        self.check_event(event)
+        os.chdir('tests')
+
+    def check_event(self, event):
         self.assertTrue("organization_id" in event.keys())
         self.assertTrue("title" in event.keys())
         self.assertTrue("dates" in event.keys())
         self.assertTrue("location" in event.keys())
         self.assertTrue("price" in event.keys())
         self.assertTrue("tags" in event.keys())
+        self.assertTrue(len(event["tags"]) > 0)
         self.assertTrue("detail_info_url" in event.keys())
         self.assertTrue("public_at" in event.keys())
         self.assertTrue("image_horizontal" in event.keys())

@@ -71,6 +71,20 @@ def prepare_date(dates):
 def prepare_desc(desc):
     if len(desc) > 2000:
         return desc[:2000]
+    return desc
+
+
+def get_public_date():
+    public_date = datetime.datetime.today() \
+        .replace(day=datetime.datetime.today().day + 1, hour=14, minute=0, second=0, microsecond=0)
+    return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def get_default_img():
+    with open("evendate.png", "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+    image_horizontal = "data:image/png;base64," + encoded_string.decode("utf-8")
+    return image_horizontal
 
 
 def parse_desc_from_digit_october(url):
@@ -85,8 +99,6 @@ def parse_desc_from_digit_october(url):
     title = title_block.xpath('.//h1')[0].text.strip()
     date_raw = title_block.xpath('.//span[@class="date"]')[0].text.strip()
     dates = parse_digital_october_date(date_raw)
-    public_date = datetime.datetime.today() \
-        .replace(day=datetime.datetime.today().day + 1, hour=14, minute=0, second=0, microsecond=0)
 
     img_url = base_url + title_block.xpath('.//img[@class="img"]')[0].get("src")
     format_list = title_block.xpath('.//span[@class="type"]')
@@ -106,12 +118,51 @@ def parse_desc_from_digit_october(url):
     if format_str:
         tags.append(format_str)
 
-    with open("evendate.png", "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
-    image_horizontal = "data:image/png;base64," + encoded_string.decode("utf-8")
-
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates), "description": prepare_desc(text),
            "location": map_text, "price": price, "tags": tags, "detail_info_url": url,
-           "public_at": public_date.strftime('%Y-%m-%dT%H:%M:%SZ'), "image_horizontal": image_horizontal,
+           "public_at": get_public_date(), "image_horizontal": get_default_img(),
            "filenames": {'horizontal': "image.png"}}
     return res
+
+
+def parse_desc_from_planetarium(url):
+    base_url = "http://www.planetarium-moscow.ru/"
+    org_id = 130
+
+    g = Grab(log_file='out.html')
+    g.go(url)
+    print("parse " + url)
+
+    event_block = g.doc.select('//div[@class="item news_item"]').node()
+
+    title = event_block.xpath('.//h3')[0].text.strip()
+
+    day_pattern = re.compile('[А-Яа-я:]*\s*(\d{1,2}).(\d{1,2}).(\d{4})')
+
+    date_raw = event_block.xpath('.//div[@class="date"]')[0].text.strip()
+    match = day_pattern.match(date_raw)
+    dates = []
+    if match:
+        day = int(match.group(1))
+        month = int(match.group(2))
+        year = int(match.group(3))
+        date = datetime.datetime(year=year, month=month, day=day, hour=0)
+        end_date = date.replace(hour=23)
+        dates = [(date, end_date)]
+
+    texts = event_block.xpath('.//p')
+    description = ""
+    for text_elem in texts:
+        if text_elem.text is not None:
+            description += BeautifulSoup(tostring(text_elem)).text
+
+    price = 500
+    map = "г. Москва, ул.Садовая-Кудринская 5, стр. 1, м. Баррикадная, Краснопресненская"
+
+    tags = ["Московский планетариум"]
+
+    return {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+            "description": prepare_desc(description),
+            "location": map, "price": price, "tags": tags, "detail_info_url": url,
+            "public_at": get_public_date(), "image_horizontal": get_default_img(),
+            "filenames": {'horizontal': "image.png"}}
