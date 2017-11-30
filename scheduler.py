@@ -7,7 +7,7 @@ x = datetime.today()
 y = x + timedelta(days=1)
 delta_t = y - x
 
-secs = delta_t.seconds + 1
+secs = delta_t.total_seconds()
 
 
 def schedule():
