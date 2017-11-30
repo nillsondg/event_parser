@@ -1,10 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Timer
 import event_parser
 import event_creator
 
 x = datetime.today()
-y = x.replace(day=x.day + 1, hour=x.hour, minute=x.minute, second=0, microsecond=0)
+y = x + timedelta(days=1)
 delta_t = y - x
 
 secs = delta_t.seconds + 1
@@ -19,7 +19,8 @@ def schedule():
     event_creator.process_planetarium()
     print(str(datetime.today()) + "\tDone")
 
+    t = Timer(secs, schedule)
+    t.start()
+
 
 schedule()
-t = Timer(secs, schedule)
-t.start()
