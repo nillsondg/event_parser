@@ -77,7 +77,8 @@ def prepare_desc(desc):
 
 def get_public_date():
     public_date = datetime.datetime.today() \
-        .replace(day=datetime.datetime.today().day + 1, hour=14, minute=0, second=0, microsecond=0)
+        .replace(day=datetime.datetime.today().day, hour=14, minute=0, second=0, microsecond=0)
+    public_date += datetime.timedelta(days=1)
     return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
