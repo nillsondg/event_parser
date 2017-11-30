@@ -172,6 +172,32 @@ def parse_desc_from_planetarium(url):
             "filenames": {'horizontal': "image.png"}}
 
 
+def process_strelka_date(date_raw, time_raw):
+    many_days_pattern = re.compile('(\d{1,2}).(\d{1,2})-(\d{1,2}).(\d{1,2})')
+
+    match_many = many_days_pattern.match(date_raw)
+    if match_many:
+        date_str_start = match_many.group(1) + " " + match_many.group(
+            2) + " " + str(datetime.datetime.today().year) + " " + time_raw
+        first_day = datetime.datetime.strptime(date_str_start, "%d %m %Y %H:%M")
+        first_end_day = first_day.replace(day=first_day.day, hour=first_day.hour + 2, minute=0, second=0, microsecond=0)
+
+        dates = [(first_day, first_end_day)]
+        last_day = first_day
+        for day in range(int(match_many.group(1)) + 1, int(match_many.group(3)) + 1):
+            start_date = last_day + datetime.timedelta(days=1)
+            end_date = start_date + datetime.timedelta(hours=2)
+            last_day = start_date
+            dates.append((start_date, end_date))
+    else:
+        date_str = date_raw + " " + time_raw
+        date = datetime.datetime.strptime(date_str, "%d.%m %H:%M")
+        date = date.replace(year=datetime.datetime.today().year)
+        end_date = date.replace(day=date.day, hour=date.hour + 2, minute=0, second=0, microsecond=0)
+        dates = [(date, end_date)]
+    return dates
+
+
 def parse_desc_from_strelka(url):
     base_url = "http://strelka.com"
     org_id = 6
@@ -197,13 +223,12 @@ def parse_desc_from_strelka(url):
     date_raw = info_blocks[1][0].tail
     time_raw = info_blocks[2][0].tail
 
-    date_str = date_raw + " " + time_raw
-    date = datetime.datetime.strptime(date_str, "%d.%m %H:%M")
-    date = date.replace(year=datetime.datetime.today().year)
-    end_date = date.replace(day=date.day, hour=date.hour + 2, minute=0, second=0, microsecond=0)
-    dates = [(date, end_date)]
+    dates = process_strelka_date(date_raw, time_raw)
 
     place = info_blocks[3][0].tail
+    if place == "зал":
+        place = "г. Москва, Берсеневская наб. 14, стр. 5а, м. Кропоткинская"
+
     price = info_blocks[4][0].tail
     price = 0
     background_style = g.doc.select('//div[@class="inner"]').node().get("style")
@@ -234,3 +259,7 @@ def parse_desc_from_strelka(url):
            "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': "image.png"}}
     return res
+
+
+parse_desc_from_strelka(
+    "http://strelka.com/ru/events/event/2017/11/28/intensive-course-selector-pro-2017-management-in-the-music-business")
