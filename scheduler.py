@@ -15,8 +15,7 @@ def schedule():
     print("Start checking")
     event_parser.parse_all()
     print("Start parsing")
-    event_creator.process_digital_october()
-    event_creator.process_planetarium()
+    event_creator.process_all()
     print(str(datetime.today()) + "\tDone")
 
     t = Timer(secs, schedule)

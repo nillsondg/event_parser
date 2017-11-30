@@ -108,7 +108,7 @@ def parse_desc_from_digit_october(url):
         format_str = format_list[0].text
 
     text_block = g.doc.select('//div[@class="text_description pt15"]').node()
-    text = BeautifulSoup(tostring(text_block)).text
+    text = BeautifulSoup(tostring(text_block), "lxml").text
 
     map_block = g.doc.select('//div[@class="contact"]').node()
     map_text = map_block.xpath('.//p')[0].text
@@ -158,7 +158,7 @@ def parse_desc_from_planetarium(url):
     description = ""
     for text_elem in texts:
         if text_elem.text is not None:
-            description += BeautifulSoup(tostring(text_elem)).text
+            description += BeautifulSoup(tostring(text_elem), "lxml").text
 
     price = 500
     location = "г. Москва, ул.Садовая-Кудринская 5, стр. 1, м. Баррикадная, Краснопресненская"
@@ -171,3 +171,66 @@ def parse_desc_from_planetarium(url):
             "public_at": get_public_date(), "image_horizontal": get_default_img(),
             "filenames": {'horizontal': "image.png"}}
 
+
+def parse_desc_from_strelka(url):
+    base_url = "http://strelka.com"
+    org_id = 6
+
+    g = Grab(log_file='out.html')
+    g.go(url)
+    print("parse " + url)
+
+    title_block = g.doc.select('//h1[@class="new_top_title new_regular"]').node()
+    title = title_block.xpath('.//a')[0].text.strip()
+
+    description_block = g.doc.select('//div[@class="new_event_body_text"]').node()
+
+    texts = description_block.xpath('.//p')
+    description = ""
+    for text_elem in texts:
+        if text_elem.text is not None:
+            description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    info_block = g.doc.select('//div[@class="new_right_colomn_inner"]').node()
+    info_blocks = info_block.xpath('.//div[@class="new_event_detail new_mono"]')
+    tag = info_blocks[0][0].tail
+    date_raw = info_blocks[1][0].tail
+    time_raw = info_blocks[2][0].tail
+
+    date_str = date_raw + " " + time_raw
+    date = datetime.datetime.strptime(date_str, "%d.%m %H:%M")
+    date = date.replace(year=datetime.datetime.today().year)
+    end_date = date.replace(day=date.day, hour=date.hour + 2, minute=0, second=0, microsecond=0)
+    dates = [(date, end_date)]
+
+    place = info_blocks[3][0].tail
+    price = info_blocks[4][0].tail
+    price = 0
+    background_style = g.doc.select('//div[@class="inner"]').node().get("style")
+
+    img_pattern = re.compile(r"url\(([\w\/\-.]*)\)")
+
+    match = img_pattern.search(background_style)
+    if match:
+        img_url = base_url + match.group(1)
+        img_raw = requests.get(img_url, allow_redirects=True)
+        img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+    else:
+        img = get_default_img()
+
+    # map_block = g.doc.select('//div[@class="contact"]').node()
+    # map_text = map_block.xpath('.//p')[0].text
+    #
+    # price = 1000
+    #
+    tags = ["Стрелка", tag]
+
+    # img_raw = requests.get(img_url, allow_redirects=True)
+    # img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+    #
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description),
+           "location": place, "price": price, "tags": tags, "detail_info_url": url,
+           "public_at": get_public_date(), "image_horizontal": img,
+           "filenames": {'horizontal': "image.png"}}
+    return res
