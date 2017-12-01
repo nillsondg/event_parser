@@ -40,7 +40,7 @@ def __process(file_name, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
-    server = smtplib.SMTP_SSL(config.SMTP_SERVER)
+    server = smtplib.SMTP(config.SMTP_SERVER, 25)
     server.login(config.EMAIL_LOGIN, config.EMAIL_PASS)
 
     for url in process_set:
@@ -63,7 +63,7 @@ def __process_butch(file_name, org, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
-    server = smtplib.SMTP_SSL(config.SMTP_SERVER)
+    server = smtplib.SMTP(config.SMTP_SERVER)
     server.login(config.EMAIL_LOGIN, config.EMAIL_PASS)
 
     done_list = []
