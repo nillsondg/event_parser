@@ -82,10 +82,10 @@ def get_public_date():
     return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
-def get_default_img(img_name="evendate.png"):
+def get_default_img(img_name="evendate.png", ext="png"):
     with open(img_name, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
-    image_horizontal = "data:image/png;base64," + encoded_string.decode("utf-8")
+    image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
     return image_horizontal
 
 
@@ -312,10 +312,12 @@ def parse_desc_from_tretyako(url):
 
     tags = ["Третьяковка", tag]
 
-    img_url = base_url + g.doc.select('//img[@class="header-event__img"]').node().get('src')
-
-    img_raw = requests.get(img_url, allow_redirects=True)
-    img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+    try:
+        img_url = base_url + g.doc.select('//img[@class="header-event__img"]').node().get('src')
+        img_raw = requests.get(img_url, allow_redirects=True)
+        img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+    except IndexError:
+        img = get_default_img("tretyako.jpg", "jpg")
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
@@ -323,4 +325,5 @@ def parse_desc_from_tretyako(url):
            "filenames": {'horizontal': "image.png"}}
     return res
 
-# parse_desc_from_tretyako("https://www.tretyakovgallery.ru/events/shedevry-russkoy-zhivopisi-xviii-xix-vekov-11-01-18/")
+
+parse_desc_from_tretyako("http://www.tretyakovgallery.ru/events/bratya-motsart/")
