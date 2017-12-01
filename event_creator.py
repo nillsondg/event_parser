@@ -26,6 +26,16 @@ def __send_email(server, for_url, from_url):
     server.sendmail(from_addr, to_addr, msg)
 
 
+def __send_email_for_org(server, org, msg_text):
+    from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN
+    to_addr = 'Mr. Poster <%s>' % config.TRELLO_EMAIL
+    subj = 'New events for ' + org
+    msg_txt = msg_text
+
+    msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_txt)
+    server.sendmail(from_addr, to_addr, msg)
+
+
 def __process(file_name, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
@@ -42,6 +52,32 @@ def __process(file_name, processor):
     server.quit()
 
 
+def __prepare_msg_text(done_list):
+    text = ""
+    for res_url, url in done_list:
+        text += "Added " + res_url + " from " + url + "   \r\n"
+    return text
+
+
+def __process_butch(file_name, org, processor):
+    checked_urls = parse_logger.read_checked_urls(file_name)
+    done_urls = parse_logger.read_completed_urls(file_name)
+    process_set = checked_urls.difference(done_urls)
+    server = smtplib.SMTP_SSL(config.SMTP_SERVER)
+    server.login(config.EMAIL_LOGIN, config.EMAIL_PASS)
+
+    done_list = []
+
+    for url in process_set:
+        res_url = __post_to_evendate(processor(url))
+        parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
+        done_list.append((res_url, url))
+
+    __send_email_for_org(server, org, __prepare_msg_text(done_list))
+    time.sleep(10)
+    server.quit()
+
+
 def process_digital_october():
     __process("digit_october.txt", event_desc_parser.parse_desc_from_digit_october)
 
@@ -55,7 +91,12 @@ def process_strelka():
     __process("strelka.txt", event_desc_parser.parse_desc_from_strelka)
 
 
+def process_tretyako():
+    __process_butch("tretyako.txt", "Tretyakovskay gallery", event_desc_parser.parse_desc_from_tretyako)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
     process_planetarium()
+    process_tretyako()

@@ -158,9 +158,33 @@ def parse_from_lumiere():
     print("end check " + lumiere_url)
 
 
+def parse_from_tretyako():
+    tretyako_url = "http://www.tretyakovgallery.ru/events/"
+    file_name = "tretyako.txt"
+    base_url = "http://www.tretyakovgallery.ru"
+
+    g = Grab(headers=headers)
+    g.go(tretyako_url)
+    print("check " + tretyako_url)
+
+    main = g.doc.select('//div[@class="events__list events-list"]').node()
+    events = main.xpath('.//div[@class="row"]')
+
+    urls = set()
+    for event in events:
+        url = event.xpath('.//a[@class="event-item__name"]')[0].get("href")
+        if not url.startswith("http"):
+            url = base_url + url
+            urls.add(url)
+
+    exist_urls = read_events_from_file(file_name=file_name)
+    write_events_to_file(file_name, urls, exist_urls)
+    print("end check " + base_url)
+
+
 def parse_all():
-    parse_from_skolkovo()
+    # parse_from_skolkovo()
     parse_from_planetarium()
     parse_from_strelka()
-    parse_from_lumiere()
+    # parse_from_lumiere()
     parse_url_from_digit_october()

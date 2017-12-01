@@ -203,6 +203,7 @@ def parse_desc_from_strelka(url):
     org_id = 6
 
     g = Grab(log_file='out.html')
+    g.setup(timeout=30)
     g.go(url)
     print("parse " + url)
 
@@ -261,5 +262,65 @@ def parse_desc_from_strelka(url):
     return res
 
 
-parse_desc_from_strelka(
-    "http://strelka.com/ru/events/event/2017/11/28/intensive-course-selector-pro-2017-management-in-the-music-business")
+def parse_desc_from_tretyako(url):
+    base_url = "https://www.tretyakovgallery.ru"
+    org_id = 8
+
+    g = Grab(log_file='out.html')
+    g.go(url)
+    print("parse " + url)
+
+    event_info_block = g.doc.select('//header[contains(@class, "header-event")]').node()
+
+    tag = event_info_block.xpath('.//span[@class="event-info__type type"]')[0].text
+    date_raw = event_info_block.xpath('.//span[@class="event-info__date"]')[0].text.lower()
+    time_raw = event_info_block.xpath('.//span[@class="event-info__time"]')[0].text
+
+    day_pattern = re.compile('\d{1,2} ([А-Яа-я]*)')
+    match = day_pattern.match(date_raw)
+    if match:
+        month = match.group(1)
+        date_str = date_raw.replace(month, str(month_to_num(month)))
+
+        year = datetime.datetime.today().year
+        if month_to_num(month) < datetime.datetime.today().month:
+            year += 1
+
+        datetime_str = date_str + " " + str(year) + " " + time_raw
+    else:
+        # todo
+        pass
+
+    date = datetime.datetime.strptime(datetime_str, "%d %m %Y %H:%M")
+    end_date = date + datetime.timedelta(hours=2)
+    dates = [(date, end_date)]
+
+    title = event_info_block.xpath('.//h1[@class="header-event__title h1"]')[0].text
+
+    event_description_block = g.doc.select('//section[@class="event-desc"]').node()
+
+    text_desc_block = event_description_block.xpath('.//div[@class="col-sm-7"]')[0]
+    description = text_desc_block.xpath('.//div[@class="event-desc__lid"]')[0].text
+    texts = text_desc_block.xpath('.//p')
+    for text_elem in texts:
+        if text_elem.text is not None:
+            description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    place = "Москва " + g.doc.select('//div[@class="museum__address"]').node().text
+
+    price = 0
+
+    tags = ["Третьяковка", tag]
+
+    img_url = base_url + g.doc.select('//img[@class="header-event__img"]').node().get('src')
+
+    img_raw = requests.get(img_url, allow_redirects=True)
+    img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
+           "filenames": {'horizontal': "image.png"}}
+    return res
+
+# parse_desc_from_tretyako("https://www.tretyakovgallery.ru/events/shedevry-russkoy-zhivopisi-xviii-xix-vekov-11-01-18/")
