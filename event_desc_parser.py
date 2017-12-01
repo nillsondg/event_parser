@@ -300,7 +300,12 @@ def parse_desc_from_tretyako(url):
     event_description_block = g.doc.select('//section[@class="event-desc"]').node()
 
     text_desc_block = event_description_block.xpath('.//div[@class="col-sm-7"]')[0]
-    description = text_desc_block.xpath('.//div[@class="event-desc__lid"]')[0].text
+
+    try:
+        description = text_desc_block.xpath('.//div[@class="event-desc__lid"]')[0].text
+    except IndexError:
+        description = ""
+
     texts = text_desc_block.xpath('.//p')
     for text_elem in texts:
         if text_elem.text is not None:
@@ -326,4 +331,4 @@ def parse_desc_from_tretyako(url):
     return res
 
 
-parse_desc_from_tretyako("http://www.tretyakovgallery.ru/events/bratya-motsart/")
+parse_desc_from_tretyako("http://www.tretyakovgallery.ru/events/programma-chetvyertaya-shedevr/")
