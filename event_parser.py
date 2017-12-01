@@ -188,3 +188,4 @@ def parse_all():
     parse_from_strelka()
     # parse_from_lumiere()
     parse_url_from_digit_october()
+    parse_from_tretyako()

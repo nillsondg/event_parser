@@ -82,8 +82,8 @@ def get_public_date():
     return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
-def get_default_img():
-    with open("evendate.png", "rb") as image_file:
+def get_default_img(img_name="evendate.png"):
+    with open(img_name, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_horizontal = "data:image/png;base64," + encoded_string.decode("utf-8")
     return image_horizontal
@@ -168,7 +168,7 @@ def parse_desc_from_planetarium(url):
     return {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
             "description": prepare_desc(description),
             "location": location, "price": price, "tags": tags, "detail_info_url": url,
-            "public_at": get_public_date(), "image_horizontal": get_default_img(),
+            "public_at": get_public_date(), "image_horizontal": get_default_img(img_name="planetarium.png"),
             "filenames": {'horizontal': "image.png"}}
 
 
