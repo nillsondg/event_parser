@@ -7,6 +7,46 @@ import base64
 import requests
 
 
+def get_grab():
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
+    }
+    g = Grab(log_file='out.html', headers=headers)
+    g.setup(timeout=60)
+    return g
+
+
+def prepare_date(dates):
+    new_dates = []
+    for day in dates:
+        event_date = day[0].strftime('%Y-%m-%d')
+        start_time = day[0].strftime('%H:%M')
+        end_time = day[1].strftime('%H:%M')
+        date = {"event_date": event_date, "start_time": start_time, "end_time": end_time}
+        new_dates.append(date)
+    return new_dates
+
+
+def prepare_desc(desc):
+    if len(desc) > 2000:
+        return desc[:2000]
+    return desc
+
+
+def get_public_date():
+    public_date = datetime.datetime.today() \
+        .replace(day=datetime.datetime.today().day, hour=14, minute=0, second=0, microsecond=0)
+    public_date += datetime.timedelta(days=1)
+    return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def get_default_img(img_name="evendate.png", ext="png"):
+    with open(img_name, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+    image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
+    return image_horizontal
+
+
 def month_to_num(month):
     return {
         'января': 1,
@@ -58,42 +98,11 @@ def parse_digital_october_date(date_str):
         return dates
 
 
-def prepare_date(dates):
-    new_dates = []
-    for day in dates:
-        event_date = day[0].strftime('%Y-%m-%d')
-        start_time = day[0].strftime('%H:%M')
-        end_time = day[1].strftime('%H:%M')
-        date = {"event_date": event_date, "start_time": start_time, "end_time": end_time}
-        new_dates.append(date)
-    return new_dates
-
-
-def prepare_desc(desc):
-    if len(desc) > 2000:
-        return desc[:2000]
-    return desc
-
-
-def get_public_date():
-    public_date = datetime.datetime.today() \
-        .replace(day=datetime.datetime.today().day, hour=14, minute=0, second=0, microsecond=0)
-    public_date += datetime.timedelta(days=1)
-    return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-
-def get_default_img(img_name="evendate.png", ext="png"):
-    with open(img_name, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
-    image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
-    return image_horizontal
-
-
 def parse_desc_from_digit_october(url):
     base_url = "http://digitaloctober.ru"
     org_id = 27
 
-    g = Grab(log_file='out.html')
+    g = get_grab()
     g.go(url)
     print("parse " + url)
 
@@ -133,7 +142,7 @@ def parse_desc_from_planetarium(url):
     base_url = "http://www.planetarium-moscow.ru/"
     org_id = 130
 
-    g = Grab(log_file='out.html')
+    g = get_grab()
     g.go(url)
     print("parse " + url)
 
@@ -202,8 +211,7 @@ def parse_desc_from_strelka(url):
     base_url = "http://strelka.com"
     org_id = 6
 
-    g = Grab(log_file='out.html')
-    g.setup(timeout=30)
+    g = get_grab()
     g.go(url)
     print("parse " + url)
 
@@ -266,7 +274,7 @@ def parse_desc_from_tretyako(url):
     base_url = "https://www.tretyakovgallery.ru"
     org_id = 8
 
-    g = Grab(log_file='out.html')
+    g = get_grab()
     g.go(url)
     print("parse " + url)
 
@@ -329,6 +337,3 @@ def parse_desc_from_tretyako(url):
            "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': "image.png"}}
     return res
-
-
-parse_desc_from_tretyako("http://www.tretyakovgallery.ru/events/programma-chetvyertaya-shedevr/")
