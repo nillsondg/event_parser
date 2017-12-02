@@ -36,12 +36,13 @@ def __send_email(server, for_url, from_url):
 
 
 def __send_email_for_org(server, org, msg_text):
+    if msg_text == "":
+        return
     from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN
     to_addr = 'Mr. Poster <%s>' % config.TRELLO_EMAIL
     subj = 'New events for ' + org
-    msg_txt = msg_text
 
-    msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_txt)
+    msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_text)
     server.sendmail(from_addr, to_addr, msg)
 
 
@@ -53,9 +54,13 @@ def __process(file_name, processor):
 
     for url in process_set:
         res_url = __post_to_evendate(processor(url))
-        __send_email(server, res_url, url)
+        if res_url is not None:
+            parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
+            __send_email(server, res_url, url)
+        else:
+            __send_email(server, "ERROR", url)
         parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
-        time.sleep(30)
+        time.sleep(10)
 
     server.quit()
 
@@ -69,7 +74,7 @@ def __prepare_msg_text(done_list, error_list):
     return text
 
 
-def __process_butch(file_name, org, processor):
+def __process_bunch(file_name, org, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
@@ -85,14 +90,14 @@ def __process_butch(file_name, org, processor):
             done_list.append((res_url, url))
         else:
             error_list.append(url)
+        time.sleep(10)
 
     __send_email_for_org(server, org, __prepare_msg_text(done_list, error_list))
-    time.sleep(10)
     server.quit()
 
 
 def process_digital_october():
-    __process("digit_october.txt", event_desc_parser.parse_desc_from_digit_october)
+    __process_bunch("digit_october.txt", event_desc_parser.parse_desc_from_digit_october)
 
 
 def process_planetarium():
@@ -101,15 +106,15 @@ def process_planetarium():
 
 
 def process_strelka():
-    __process("strelka.txt", event_desc_parser.parse_desc_from_strelka)
+    __process_bunch("strelka.txt", event_desc_parser.parse_desc_from_strelka)
 
 
 def process_tretyako():
-    __process_butch("tretyako.txt", "Tretyakovskay gallery", event_desc_parser.parse_desc_from_tretyako)
+    __process_bunch("tretyako.txt", "Tretyakovskay gallery", event_desc_parser.parse_desc_from_tretyako)
 
 
 def process_garage():
-    __process_butch("garage.txt", "Garage", event_desc_parser.parse_desc_from_garage)
+    __process_bunch("garage.txt", "Garage", event_desc_parser.parse_desc_from_garage)
 
 
 def process_all():
