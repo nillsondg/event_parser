@@ -1,9 +1,6 @@
 from grab import Grab
 import datetime
-
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
-}
+from parse_logger import read_checked_urls
 
 urls_folder = "events/"
 
@@ -15,17 +12,6 @@ def get_grab():
     g = Grab(log_file='out.html', headers=headers)
     g.setup(timeout=60)
     return g
-
-
-def read_events_from_file(file_name):
-    exist_urls = set()
-    try:
-        with open(urls_folder + file_name) as f:
-            for line in f:
-                exist_urls.add(line.strip().split(' ')[1])
-    except IOError:
-        pass
-    return exist_urls
 
 
 def write_events_to_file(file_name, url_set, exist_url_set):
@@ -55,7 +41,7 @@ def parse_url_from_digit_october():
             url = base_url + url
             urls.add(url)
 
-    exist_urls = read_events_from_file(file_name=file_name)
+    exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + do_url)
 
@@ -87,7 +73,7 @@ def parse_from_strelka():
                 url = base_url + url
                 urls.add(url)
 
-    exist_urls = read_events_from_file(file_name=file_name)
+    exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + strelka_url)
 
@@ -97,7 +83,7 @@ def parse_from_planetarium():
     file_name = "planetarium.txt"
     base_url = "http://www.planetarium-moscow.ru"
 
-    g = Grab(log_file='out.html', headers=headers)
+    g = get_grab()
     g.go(planetarium_url)
     print("check " + planetarium_url)
 
@@ -111,7 +97,7 @@ def parse_from_planetarium():
             url = base_url + url
             urls.add(url)
 
-    exist_urls = read_events_from_file(file_name=file_name)
+    exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + planetarium_url)
 
@@ -121,7 +107,7 @@ def parse_from_skolkovo():
     file_name = "skolkovo.txt"
     base_url = ""
 
-    g = Grab(log_file='out.html', headers=headers)
+    g = get_grab()
     g.go(skolkovo_url)
     print("check " + skolkovo_url)
 
@@ -136,7 +122,7 @@ def parse_from_skolkovo():
         else:
             urls.add(url)
 
-    exist_urls = read_events_from_file(file_name=file_name)
+    exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + skolkovo_url)
 
@@ -147,7 +133,7 @@ def parse_from_lumiere():
     file_name = "lumiere.txt"
     base_url = "http://www.lumiere.ru"
 
-    g = Grab(headers=headers)
+    g = get_grab()
     g.go(lumiere_url)
     print("check " + lumiere_url)
 
@@ -161,7 +147,7 @@ def parse_from_lumiere():
             url = base_url + url
             urls.add(url)
 
-    exist_urls = read_events_from_file(file_name=file_name)
+    exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + lumiere_url)
 
@@ -185,7 +171,7 @@ def parse_from_tretyako():
             url = base_url + url
             urls.add(url)
 
-    exist_urls = read_events_from_file(file_name=file_name)
+    exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + base_url)
 
@@ -216,7 +202,7 @@ def parse_from_garage():
             url = base_url + url
             urls.add(url)
 
-    exist_urls = read_events_from_file(file_name=file_name)
+    exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + base_url)
 
@@ -228,3 +214,4 @@ def parse_all():
     # parse_from_lumiere()
     parse_url_from_digit_october()
     parse_from_tretyako()
+    parse_from_garage()
