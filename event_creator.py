@@ -97,7 +97,7 @@ def __process_bunch(file_name, org, processor):
 
 
 def process_digital_october():
-    __process_bunch("digit_october.txt", event_desc_parser.parse_desc_from_digit_october)
+    __process_bunch("digit_october.txt", "Digital October", event_desc_parser.parse_desc_from_digit_october)
 
 
 def process_planetarium():
@@ -106,7 +106,7 @@ def process_planetarium():
 
 
 def process_strelka():
-    __process_bunch("strelka.txt", event_desc_parser.parse_desc_from_strelka)
+    __process_bunch("strelka.txt", "Strelka", event_desc_parser.parse_desc_from_strelka)
 
 
 def process_tretyako():
