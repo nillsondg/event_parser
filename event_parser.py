@@ -1,4 +1,3 @@
-# import requests
 from grab import Grab
 import datetime
 
@@ -7,6 +6,15 @@ headers = {
 }
 
 urls_folder = "events/"
+
+
+def get_grab():
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
+    }
+    g = Grab(log_file='out.html', headers=headers)
+    g.setup(timeout=60)
+    return g
 
 
 def read_events_from_file(file_name):
@@ -163,7 +171,7 @@ def parse_from_tretyako():
     file_name = "tretyako.txt"
     base_url = "http://www.tretyakovgallery.ru"
 
-    g = Grab(headers=headers)
+    g = get_grab()
     g.go(tretyako_url)
     print("check " + tretyako_url)
 
@@ -174,6 +182,37 @@ def parse_from_tretyako():
     for event in events:
         url = event.xpath('.//a[@class="event-item__name"]')[0].get("href")
         if not url.startswith("http"):
+            url = base_url + url
+            urls.add(url)
+
+    exist_urls = read_events_from_file(file_name=file_name)
+    write_events_to_file(file_name, urls, exist_urls)
+    print("end check " + base_url)
+
+
+def parse_from_garage():
+    garage_url = "https://garagemca.org/ru/calendar"
+    file_name = "garage.txt"
+    base_url = "https://garagemca.org"
+
+    g = get_grab()
+    g.go(garage_url)
+    print("check " + garage_url)
+
+    main = g.doc.select('//div[@class="calendar-events__container"]').node()
+    events = main.xpath('.//div[@class="calendar-event"]')
+    main_exb = g.doc.select('//div[@class="calendar-exhibitions"]').node()
+    exhibitions = main_exb.xpath('.//div[@class="calendar-event is-white"]')
+
+    urls = set()
+    for event in events:
+        url = event.xpath('.//a[@class="calendar-event__image"]')[0].get("href")
+        if not url.startswith("https"):
+            url = base_url + url
+            urls.add(url)
+    for exhibition in exhibitions:
+        url = exhibition.xpath('.//a[contains(@class, "calendar-event__image")]')[0].get("href")
+        if not url.startswith("https"):
             url = base_url + url
             urls.add(url)
 

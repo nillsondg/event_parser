@@ -7,6 +7,15 @@ import time
 import config
 
 
+def get_email_server():
+    if config.SMTP_SERVER == 'smtp.yandex.ru':
+        server = smtplib.SMTP_SSL(config.SMTP_SERVER)
+    else:
+        server = smtplib.SMTP(config.SMTP_SERVER, 25)
+    server.login(config.EMAIL_LOGIN, config.EMAIL_PASS)
+    return server
+
+
 def __post_to_evendate(event_desc):
     print("posting " + event_desc['detail_info_url'])
     headers = {'Authorization': config.AUTH_TOKEN}
@@ -40,8 +49,7 @@ def __process(file_name, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
-    server = smtplib.SMTP(config.SMTP_SERVER, 25)
-    server.login(config.EMAIL_LOGIN, config.EMAIL_PASS)
+    server = get_email_server()
 
     for url in process_set:
         res_url = __post_to_evendate(processor(url))
@@ -52,10 +60,12 @@ def __process(file_name, processor):
     server.quit()
 
 
-def __prepare_msg_text(done_list):
+def __prepare_msg_text(done_list, error_list):
     text = ""
     for res_url, url in done_list:
-        text += "Added " + res_url + " from " + url + "   \r\n"
+        text += "ADDED " + res_url + "   \r\n"
+    for url in error_list:
+        text += "ERROR " + url + "   \r\n"
     return text
 
 
@@ -63,17 +73,20 @@ def __process_butch(file_name, org, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
-    server = smtplib.SMTP(config.SMTP_SERVER)
-    server.login(config.EMAIL_LOGIN, config.EMAIL_PASS)
+    server = get_email_server()
 
     done_list = []
+    error_list = []
 
     for url in process_set:
         res_url = __post_to_evendate(processor(url))
-        parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
-        done_list.append((res_url, url))
+        if res_url is not None:
+            parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
+            done_list.append((res_url, url))
+        else:
+            error_list.append(url)
 
-    __send_email_for_org(server, org, __prepare_msg_text(done_list))
+    __send_email_for_org(server, org, __prepare_msg_text(done_list, error_list))
     time.sleep(10)
     server.quit()
 
@@ -95,8 +108,13 @@ def process_tretyako():
     __process_butch("tretyako.txt", "Tretyakovskay gallery", event_desc_parser.parse_desc_from_tretyako)
 
 
+def process_garage():
+    __process_butch("garage.txt", "Garage", event_desc_parser.parse_desc_from_garage)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
     process_planetarium()
     process_tretyako()
+    process_garage()

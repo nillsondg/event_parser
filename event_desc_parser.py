@@ -5,6 +5,7 @@ import datetime
 import re
 import base64
 import requests
+import mimetypes
 
 
 def get_grab():
@@ -47,20 +48,43 @@ def get_default_img(img_name="evendate.png", ext="png"):
     return image_horizontal
 
 
+def get_img(url):
+    img_raw = requests.get(url, allow_redirects=True)
+    content_type = img_raw.headers['content-type']
+    extension = mimetypes.guess_extension(content_type)
+    if extension == ".jpe":
+        extension = ".jpeg"
+    img = "data:{};base64,".format(content_type) + base64.b64encode(img_raw.content).decode("utf-8")
+    filename = "image" + extension
+    return img, filename
+
+
 def month_to_num(month):
     return {
         'января': 1,
+        'янв': 1,
         'февраля': 2,
+        'фев': 2,
         'марта': 3,
+        'мар': 3,
         'апреля': 4,
+        'апр': 4,
         'мая': 5,
+        'май': 5,
         'июня': 6,
+        'июн': 6,
         'июля': 7,
+        'июл': 7,
         'августа': 8,
+        'авг': 8,
         'сентября': 9,
+        'сен': 9,
         'октября': 10,
+        'окт': 10,
         'ноября': 11,
-        'декабря': 12
+        'ноя': 11,
+        'декабря': 12,
+        'дек': 12
     }[month]
 
 
@@ -327,13 +351,198 @@ def parse_desc_from_tretyako(url):
 
     try:
         img_url = base_url + g.doc.select('//img[@class="header-event__img"]').node().get('src')
-        img_raw = requests.get(img_url, allow_redirects=True)
-        img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+        img, filename = get_img(img_url)
     except IndexError:
         img = get_default_img("tretyako.jpg", "jpg")
+        filename = "image.png"
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
-           "filenames": {'horizontal': "image.png"}}
+           "filenames": {'horizontal': filename}}
     return res
+
+
+def date_range(start_date, end_date):
+    for n in range(int((end_date - start_date).days)):
+        yield start_date + datetime.timedelta(n)
+
+
+def parse_garage_dates(date_raw, time_raw):
+    # 1 декабря 2017
+    # 19:30−21:00
+
+    # 7 октября – 23 декабря 2017
+    # По субботам, 13:00–15:00
+
+    day_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{4})')
+    many_days_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{0,4})\s*–\s*(\d{1,2}) ([А-Яа-я]*) (\d{4})')
+    time_pattern = re.compile('(\d\d):(\d\d)–(\d\d):(\d\d)')
+
+    one_day_match = day_pattern.match(date_raw)
+    many_days_match = many_days_pattern.match(date_raw)
+    time_match = time_pattern.search(time_raw)
+
+    if one_day_match and time_match:
+        month = one_day_match.group(2)
+        date_str = date_raw.replace(month, str(month_to_num(month)))
+        date = datetime.datetime.strptime(date_str + " " + time_match.group(1) + ":" + time_match.group(2),
+                                          "%d %m %Y %H:%M")
+        end_date = date.replace(day=date.day, hour=int(time_match.group(3)), minute=int(time_match.group(4)))
+        return [(date, end_date)]
+    elif many_days_match and time_match:
+        month1 = many_days_match.group(2)
+        month2 = many_days_match.group(5)
+        date_str = date_raw.replace(month1, str(month_to_num(month1)))
+        date_str = date_str.replace(month2, str(month_to_num(month2)))
+
+        first_day = many_days_match.group(1)
+        last_day = many_days_match.group(4)
+        year1 = many_days_match.group(3)
+        year2 = many_days_match.group(6)
+        if year1 == "":
+            year1 = year2
+
+        first_date = datetime.datetime.strptime(str(first_day) + " " + str(month_to_num(month1)) + " " + year1,
+                                                "%d %m %Y")
+        last_date = datetime.datetime.strptime(str(last_day) + " " + str(month_to_num(month2)) + " " + year2,
+                                               "%d %m %Y")
+
+        dates = []
+        for date in date_range(first_date, last_date + datetime.timedelta(days=1)):
+            start_date = date.replace(hour=int(time_match.group(1)), minute=int(time_match.group(2)))
+            end_date = date.replace(hour=int(time_match.group(3)), minute=int(time_match.group(4)))
+            dates.append((start_date, end_date))
+
+        return dates
+
+
+def __parse_event_desc_from_garage(url):
+    base_url = "https://garagemca.org"
+    org_id = 59
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    title = g.doc.select('//h1[@class="event__header__title"]').node()[0].text
+
+    tag_container = g.doc.select('.//div[@class="event__header__tags"]').node()
+    tags_blocks = tag_container.xpath('.//a')
+    tags = ["Гараж"]
+
+    for tag in tags_blocks:
+        tags += tag.text
+
+    datetime_block = g.doc.select('//div[@class="event__meta__timestamp"]').node()
+    date_raw = datetime_block.xpath('.//span')[0].text.lower()
+    time_raw = datetime_block.xpath('.//div')[0].text.lower()
+
+    dates = parse_garage_dates(date_raw, time_raw)
+
+    event_description_block = g.doc.select('.//div[@class="event__text text"]').node()
+
+    texts = event_description_block.xpath('.//p')
+    description = ""
+    for text_elem in texts:
+        if text_elem.text is not None:
+            description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    place = "Ул. Крымский Вал, д. 9, стр. 32, Парк Горького, Москва, Россия, 119049"
+
+    price = 0
+
+    background_style = g.doc.select('//div[@class="intro-slide__gallery__image"]').node().get("style")
+
+    img_pattern = re.compile(r"url\(([\w\/\-.]*)\)")
+
+    match = img_pattern.search(background_style)
+    if match:
+        img_url = "http:" + match.group(1)
+        img, filename = get_img(img_url)
+    else:
+        img = get_default_img()
+        filename = "image.png"
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def __parse_exhibition_desc_from_garage(url):
+    base_url = "https://garagemca.org"
+    org_id = 59
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    title = g.doc.select('//h1[@class="exhibition__header__title"]').node()[0].text
+
+    tags = ["Гараж", "выставка"]
+
+    date_block = g.doc.select('//header[@class="info-bar__date"]').node()
+    first_day = date_block.xpath('.//h1')[0].text
+    last_day = date_block.xpath('.//h1')[1].text
+    first_month = date_block.xpath('.//strong')[0].text
+    last_month = date_block.xpath('.//strong')[1].text
+    first_year = date_block.xpath('.//span')[1].text
+    last_year = date_block.xpath('.//span')[3].text
+
+    time_block = g.doc.select('//article[@class="info-bar__time"]').node()
+    time_pattern = re.compile("(\d\d:\d\d)–(\d\d:\d\d)")
+
+    time_match = time_pattern.match(time_block.xpath('.//strong')[0].text)
+    start_time = time_match.group(1)
+    end_time = time_match.group(2)
+    first_date = datetime.datetime.strptime(
+        first_day + " " + str(month_to_num(first_month)) + " " + first_year + " " + start_time, "%d %m %Y %H:%M")
+    first_end_date = datetime.datetime.strptime(
+        first_day + " " + str(month_to_num(first_month)) + " " + first_year + " " + end_time, "%d %m %Y %H:%M")
+    last_date = datetime.datetime.strptime(
+        str(last_day) + " " + str(month_to_num(last_month)) + " " + last_year + " " + start_time, "%d %m %Y %H:%M")
+
+    dates = []
+    for day_count in range((last_date - first_date).days + 1):
+        start_date = first_date + datetime.timedelta(day_count)
+        end_date = first_end_date + datetime.timedelta(day_count)
+        dates.append((start_date, end_date))
+
+    event_description_block = g.doc.select('.//article[contains(@class, "ex-text__section__content")]').node()
+
+    texts = event_description_block.xpath('.//p')
+    description = ""
+    for text_elem in texts:
+        if text_elem.text is not None:
+            description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    place = "Ул. Крымский Вал, д. 9, стр. 32, Парк Горького, Москва, Россия, 119049"
+
+    price = 0
+
+    background_style = g.doc.select('//div[@class="intro-slide__gallery__image"]').node().get("style")
+
+    img_pattern = re.compile(r"url\(([\w\/\-.]*)\)")
+
+    match = img_pattern.search(background_style)
+    if match:
+        img_url = "http:" + match.group(1)
+        img, filename = get_img(img_url)
+    else:
+        img = get_default_img()
+        filename = "image.png"
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def parse_desc_from_garage(url):
+    if "/exhibition" in url:
+        return __parse_exhibition_desc_from_garage(url)
+    else:
+        return __parse_event_desc_from_garage(url)
