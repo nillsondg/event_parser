@@ -546,5 +546,3 @@ def parse_desc_from_garage(url):
         return __parse_exhibition_desc_from_garage(url)
     else:
         return __parse_event_desc_from_garage(url)
-
-parse_desc_from_garage("https://garagemca.org/ru/event/teens-day")
