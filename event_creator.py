@@ -63,9 +63,9 @@ def __process(file_name, processor):
 def __prepare_msg_text(done_list, error_list):
     text = ""
     for res_url, url in done_list:
-        text += "ADDED " + res_url + "   \r\n"
+        text += "ADDED " + res_url + "\r\n"
     for url in error_list:
-        text += "ERROR " + url + "   \r\n"
+        text += "ERROR " + url + "\r\n"
     return text
 
 

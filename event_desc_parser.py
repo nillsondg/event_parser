@@ -343,7 +343,7 @@ def parse_desc_from_tretyako(url):
         if text_elem.text is not None:
             description += BeautifulSoup(tostring(text_elem), "lxml").text
 
-    place = "Москва " + g.doc.select('//div[@class="museum__address"]').node().text
+    place = "Москва, " + g.doc.select('//div[@class="museum__address"]').node().text
 
     price = 0
 
@@ -432,7 +432,7 @@ def __parse_event_desc_from_garage(url):
     tags = ["Гараж"]
 
     for tag in tags_blocks:
-        tags += tag.text
+        tags.append(tag.text)
 
     datetime_block = g.doc.select('//div[@class="event__meta__timestamp"]').node()
     date_raw = datetime_block.xpath('.//span')[0].text.lower()
@@ -546,3 +546,5 @@ def parse_desc_from_garage(url):
         return __parse_exhibition_desc_from_garage(url)
     else:
         return __parse_event_desc_from_garage(url)
+
+parse_desc_from_garage("https://garagemca.org/ru/event/teens-day")
