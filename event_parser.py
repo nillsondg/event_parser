@@ -228,7 +228,11 @@ def parse_from_yandex():
 
     urls = set()
     for event in events:
-        url = event.xpath('.//a[contains(@class, "action-announce")]')[0].get("href")
+        url_block = event.xpath('.//a[contains(@class, "action-announce") '
+                                'and contains(@class, "action-announce_type_future")]')
+        if len(url_block) == 0:
+            break
+        url = url_block[0].get("href")
         if not url.startswith("https"):
             url = base_url + url
         urls.add(url)
@@ -246,4 +250,6 @@ def parse_all():
     parse_from_digit_october()
     parse_from_tretyako()
     parse_from_garage()
-    parse_from_yandex()
+
+
+parse_from_yandex()
