@@ -127,6 +127,7 @@ def parse_from_cinemapark():
             error_list.append(url)
         time.sleep(2)
 
-    event_creator.send_email_for_org(server, "Cinemapark", event_creator.prepare_msg_text(done_list, error_list))
+    event_creator.send_email_for_org(server, "Cinemapark (CHANGE IMAGES)",
+                                     event_creator.prepare_msg_text(done_list, error_list))
     server.quit()
     print("end check " + do_url)
