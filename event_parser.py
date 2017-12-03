@@ -57,8 +57,15 @@ def parse_from_strelka():
 
     event_blocks = list()
     event_blocks.append(g.doc.select('//div[@class="new_container new_blocks_container"]').node())
-    event_blocks.append(g.doc.select('//div[@class="new_container new_cinema_container"]').node())
-    event_blocks.append(g.doc.select('//div[@class="new_container new_discussions_container"]').node())
+
+    try:
+        event_blocks.append(g.doc.select('//div[@class="new_container new_cinema_container"]').node())
+    except IndexError:
+        pass
+    try:
+        event_blocks.append(g.doc.select('//div[@class="new_container new_discussions_container"]').node())
+    except IndexError:
+        pass
     try:
         event_blocks.append(g.doc.select('//div[@class="new_container new_yellow_container"]').node())
     except IndexError:
@@ -237,3 +244,6 @@ def parse_all():
     parse_from_tretyako()
     parse_from_garage()
     parse_url_from_yandex()
+
+
+parse_from_strelka()
