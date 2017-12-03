@@ -436,7 +436,11 @@ def __parse_event_desc_from_garage(url):
 
     datetime_block = g.doc.select('//div[@class="event__meta__timestamp"]').node()
     date_raw = datetime_block.xpath('.//span')[0].text.lower()
-    time_raw = datetime_block.xpath('.//div')[0].text.lower()
+    time_block = datetime_block.xpath('.//div')
+    if len(time_block) < 1:
+        time_raw = "00:00–23:59"
+    else:
+        time_raw = time_block[0].text.lower()
 
     dates = parse_garage_dates(date_raw, time_raw)
 
@@ -726,6 +730,3 @@ def parse_desc_from_flacon(url):
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
-
-
-parse_desc_from_garage("https://garagemca.org/ru/event/andrey-velikanov-s-lecture-cycle-ideas-and-forms")
