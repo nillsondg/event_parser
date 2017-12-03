@@ -58,7 +58,7 @@ def parse_from_cinemapark():
         if not url.startswith("http"):
             url = base_url + url
         if url in done_urls:
-            break
+            continue
         hover_block = event.xpath('.//div[@class="poster-holder"]')[0]
         title = event.xpath('.//div[@class="film-title"]')[0].text.strip()
         # 'Жанр: исторический/фантастика/экш'
