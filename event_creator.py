@@ -22,7 +22,9 @@ def __post_to_evendate(event_desc):
     r = requests.post("https://evendate.io/api/v1/events/", data=json.dumps(event_desc), headers=headers)
     print(r.status_code, r.reason)
     if r.status_code == 200:
-        return "https://evendate.io/event/" + str(json.loads(r.text)["data"]["event_id"])
+        evendate_url = "https://evendate.io/event/" + str(json.loads(r.text)["data"]["event_id"])
+        print("POSTED " + evendate_url)
+        return evendate_url
 
 
 def __send_email(server, for_url, from_url):
@@ -121,6 +123,10 @@ def process_yandex():
     __process_bunch("yandex.txt", "Yandex", event_desc_parser.parse_desc_from_yandex)
 
 
+def process_flacon():
+    __process_bunch("flacon.txt", "Flacon", event_desc_parser.parse_desc_from_flacon)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
@@ -128,3 +134,7 @@ def process_all():
     process_tretyako()
     process_garage()
     process_yandex()
+    process_flacon()
+
+
+process_flacon()
