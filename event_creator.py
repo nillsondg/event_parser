@@ -117,9 +117,14 @@ def process_garage():
     __process_bunch("garage.txt", "Garage", event_desc_parser.parse_desc_from_garage)
 
 
+def process_yandex():
+    __process_bunch("yandex.txt", "Yandex", event_desc_parser.parse_desc_from_yandex)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
     process_planetarium()
     process_tretyako()
     process_garage()
+    process_yandex()

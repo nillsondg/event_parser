@@ -28,7 +28,7 @@ def parse_url_from_digit_october():
     do_url = "http://digitaloctober.ru/ru/events"
     base_url = "http://digitaloctober.ru"
 
-    g = Grab()
+    g = get_grab()
     g.go(do_url)
     print("check " + do_url)
     main = g.doc.select('//div[@class="schedule_page"]').node()
@@ -39,7 +39,7 @@ def parse_url_from_digit_october():
         url = event.get("href")
         if not url.startswith("http"):
             url = base_url + url
-            urls.add(url)
+        urls.add(url)
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
@@ -51,7 +51,7 @@ def parse_from_strelka():
     strelka_url = "http://strelka.com/ru/events"
     base_url = "http://strelka.com"
 
-    g = Grab()
+    g = get_grab()
     g.go(strelka_url)
     print("check " + strelka_url)
 
@@ -71,7 +71,7 @@ def parse_from_strelka():
             url = event.get("href")
             if not url.startswith("http"):
                 url = base_url + url
-                urls.add(url)
+            urls.add(url)
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
@@ -95,7 +95,7 @@ def parse_from_planetarium():
         url = event.get("href")
         if not url.startswith("http"):
             url = base_url + url
-            urls.add(url)
+        urls.add(url)
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
@@ -118,9 +118,7 @@ def parse_from_skolkovo():
         url = event.get("href")
         if url.startswith("//"):
             url = "https:" + url
-            urls.add(url)
-        else:
-            urls.add(url)
+        urls.add(url)
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
@@ -145,7 +143,7 @@ def parse_from_lumiere():
         url = event.get("href")
         if not url.startswith("http"):
             url = base_url + url
-            urls.add(url)
+        urls.add(url)
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
@@ -195,16 +193,39 @@ def parse_from_garage():
         url = event.xpath('.//a[@class="calendar-event__image"]')[0].get("href")
         if not url.startswith("https"):
             url = base_url + url
-            urls.add(url)
+        urls.add(url)
     for exhibition in exhibitions:
         url = exhibition.xpath('.//a[contains(@class, "calendar-event__image")]')[0].get("href")
         if not url.startswith("https"):
             url = base_url + url
-            urls.add(url)
+        urls.add(url)
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + base_url)
+
+
+def parse_url_from_yandex():
+    file_name = "yandex.txt"
+    do_url = "https://events.yandex.ru"
+    base_url = "https://events.yandex.ru"
+
+    g = get_grab()
+    g.go(do_url)
+    print("check " + do_url)
+    main = g.doc.select('//div[contains(@class, "events-calendar__cells")]').node()
+    events = main.xpath('.//div[contains(@class, "events-calendar__cell")]')
+
+    urls = set()
+    for event in events:
+        url = event.xpath('.//a[contains(@class, "action-announce")]')[0].get("href")
+        if not url.startswith("https"):
+            url = base_url + url
+        urls.add(url)
+
+    exist_urls = read_checked_urls(file_name=file_name)
+    write_events_to_file(file_name, urls, exist_urls)
+    print("end check " + do_url)
 
 
 def parse_all():
@@ -215,3 +236,4 @@ def parse_all():
     parse_url_from_digit_october()
     parse_from_tretyako()
     parse_from_garage()
+    parse_url_from_yandex()

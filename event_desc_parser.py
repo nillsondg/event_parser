@@ -546,3 +546,65 @@ def parse_desc_from_garage(url):
         return __parse_exhibition_desc_from_garage(url)
     else:
         return __parse_event_desc_from_garage(url)
+
+
+def parse_desc_from_yandex(url):
+    base_url = "https://events.yandex.ru"
+    org_id = 24
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    title_block = g.doc.select('//h2[@class="title title_size_xl"]').node()
+    title = title_block.text
+
+    header_info_block = g.doc.select('//div[@class="event-header__info"]').node()
+
+    datetime_raw = header_info_block.xpath('.//div[contains(@class, "event-header__when")]')[0].text.strip().lower()
+    city = header_info_block.xpath('.//div[contains(@class, "event-header__place")]')[0].text.strip()
+
+    # 5 ДЕКАБРЯ, 18:30
+    one_day_pattern = re.compile('\d{1,2} ([А-Яа-я]*), \d\d:\d\d')
+    match = one_day_pattern.match(datetime_raw)
+    if match:
+        month = match.group(1)
+        date_str = datetime_raw.replace(month, str(month_to_num(month)))
+
+        year = datetime.datetime.today().year
+        if month_to_num(month) < datetime.datetime.today().month:
+            year += 1
+
+        datetime_str = date_str + " " + str(year)
+    else:
+        pass
+        # todo
+
+    date = datetime.datetime.strptime(datetime_str, "%d %m, %H:%M %Y")
+    end_date = date + datetime.timedelta(hours=2)
+    dates = [(date, end_date)]
+
+    description_block = g.doc.select('//div[contains(@class, "event-description")]').node()
+    texts = description_block.xpath('.//p')
+    description = ""
+    for text_elem in texts:
+        if text_elem.text is not None:
+            description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    map_block = g.doc.select('//div[@class="event-place__place-title"]').node()
+    map_text = city + ", " + map_block.text
+
+    price = 0
+
+    tags = []
+    keywords = g.doc.select('//meta[@name="keywords"]').node().get("content").strip().split(',')
+    for key in keywords:
+        if len(tags) < 5:
+            tags.append(key)
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(),
+           "image_horizontal": get_default_img("yandex.jpg", "jpg"),
+           "filenames": {'horizontal': "image.png"}}
+    return res
