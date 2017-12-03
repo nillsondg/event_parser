@@ -23,7 +23,7 @@ def write_events_to_file(file_name, url_set, exist_url_set):
     f.close()
 
 
-def parse_url_from_digit_october():
+def parse_from_digit_october():
     file_name = "digit_october.txt"
     do_url = "http://digitaloctober.ru/ru/events"
     base_url = "http://digitaloctober.ru"
@@ -39,7 +39,10 @@ def parse_url_from_digit_october():
         url = event.get("href")
         if not url.startswith("http"):
             url = base_url + url
-        urls.add(url)
+            urls.add(url)
+        else:
+            # add only local url cause there ara external urls in description
+            pass
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
@@ -212,7 +215,7 @@ def parse_from_garage():
     print("end check " + base_url)
 
 
-def parse_url_from_yandex():
+def parse_from_yandex():
     file_name = "yandex.txt"
     do_url = "https://events.yandex.ru"
     base_url = "https://events.yandex.ru"
@@ -240,10 +243,10 @@ def parse_all():
     parse_from_planetarium()
     parse_from_strelka()
     # parse_from_lumiere()
-    parse_url_from_digit_october()
+    parse_from_digit_october()
     parse_from_tretyako()
     parse_from_garage()
-    parse_url_from_yandex()
+    parse_from_yandex()
 
 
 parse_from_strelka()
