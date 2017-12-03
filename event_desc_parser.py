@@ -377,7 +377,7 @@ def parse_garage_dates(date_raw, time_raw):
 
     day_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{4})')
     many_days_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{0,4})\s*–\s*(\d{1,2}) ([А-Яа-я]*) (\d{4})')
-    time_pattern = re.compile('(\d\d):(\d\d)–(\d\d):(\d\d)')
+    time_pattern = re.compile('(\d\d):(\d\d)–?(\d\d)?:?(\d\d)?')
 
     one_day_match = day_pattern.match(date_raw)
     many_days_match = many_days_pattern.match(date_raw)
@@ -401,19 +401,44 @@ def parse_garage_dates(date_raw, time_raw):
         last_date = datetime.datetime.strptime(str(last_day) + " " + str(month_to_num(month2)) + " " + year2,
                                                "%d %m %Y")
 
+        start_hours = int(time_match.group(1))
+        start_minutes = int(time_match.group(2))
+        end_hours = time_match.group(3)
+        end_minutes = time_match.group(4)
+        if end_hours is not None:
+            end_hours = int(end_hours)
+            end_minutes = int(end_minutes)
+        else:
+            end_hours, end_minutes = int(start_hours) + 2, start_minutes
+            if end_hours > 23:
+                end_hours = 23
+                end_minutes = 59
+
         dates = []
         for date in date_range(first_date, last_date + datetime.timedelta(days=1)):
-            start_date = date.replace(hour=int(time_match.group(1)), minute=int(time_match.group(2)))
-            end_date = date.replace(hour=int(time_match.group(3)), minute=int(time_match.group(4)))
+            start_date = date.replace(hour=start_hours, minute=start_minutes)
+            end_date = date.replace(hour=end_hours, minute=end_minutes)
             dates.append((start_date, end_date))
 
         return dates
     elif one_day_match and time_match:
         month = one_day_match.group(2)
         date_str = date_raw.replace(month, str(month_to_num(month)))
+        start_hours = time_match.group(1)
+        start_minutes = time_match.group(2)
         date = datetime.datetime.strptime(date_str + " " + time_match.group(1) + ":" + time_match.group(2),
                                           "%d %m %Y %H:%M")
-        end_date = date.replace(day=date.day, hour=int(time_match.group(3)), minute=int(time_match.group(4)))
+        end_hours = time_match.group(3)
+        end_minutes = time_match.group(4)
+        if end_hours is not None:
+            end_hours = int(end_hours)
+            end_minutes = int(end_minutes)
+        else:
+            end_hours, end_minutes = int(start_hours) + 2, start_minutes
+            if end_hours > 23:
+                end_hours = 23
+                end_minutes = 59
+        end_date = date.replace(day=date.day, hour=end_hours, minute=end_minutes)
         return [(date, end_date)]
 
 
@@ -657,7 +682,7 @@ def parse_desc_from_flacon(url):
                 end_minutes = 59
     else:
         start_hours, start_minutes = 0, 0
-        end_hours, end_minutes = 0, 0
+        end_hours, end_minutes = 23, 59
 
     one_day_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{4})')
     interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*[—–]\s*(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
