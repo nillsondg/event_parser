@@ -16,7 +16,7 @@ def get_email_server():
     return server
 
 
-def __post_to_evendate(event_desc):
+def post_to_evendate(event_desc):
     print("posting " + event_desc['detail_info_url'])
     headers = {'Authorization': config.AUTH_TOKEN}
     r = requests.post("https://evendate.io/api/v1/events/", data=json.dumps(event_desc), headers=headers)
@@ -37,7 +37,7 @@ def __send_email(server, for_url, from_url):
     server.sendmail(from_addr, to_addr, msg)
 
 
-def __send_email_for_org(server, org, msg_text):
+def send_email_for_org(server, org, msg_text):
     if msg_text == "":
         return
     from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN
@@ -55,7 +55,7 @@ def __process(file_name, processor):
     server = get_email_server()
 
     for url in process_set:
-        res_url = __post_to_evendate(processor(url))
+        res_url = post_to_evendate(processor(url))
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
             __send_email(server, res_url, url)
@@ -67,7 +67,7 @@ def __process(file_name, processor):
     server.quit()
 
 
-def __prepare_msg_text(done_list, error_list):
+def prepare_msg_text(done_list, error_list):
     text = ""
     for res_url, url in done_list:
         text += "ADDED " + res_url + "\r\n"
@@ -86,7 +86,7 @@ def __process_bunch(file_name, org, processor):
     error_list = []
 
     for url in process_set:
-        res_url = __post_to_evendate(processor(url))
+        res_url = post_to_evendate(processor(url))
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
             done_list.append((res_url, url))
@@ -94,7 +94,7 @@ def __process_bunch(file_name, org, processor):
             error_list.append(url)
         time.sleep(10)
 
-    __send_email_for_org(server, org, __prepare_msg_text(done_list, error_list))
+    send_email_for_org(server, org, prepare_msg_text(done_list, error_list))
     server.quit()
 
 

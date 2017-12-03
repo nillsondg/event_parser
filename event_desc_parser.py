@@ -688,7 +688,7 @@ def parse_desc_from_flacon(url):
         dates = []
         for day in range((last_date - date).days + 1):
             start_date = date + datetime.timedelta(day)
-            end_date = last_date + datetime.timedelta(day)
+            end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
             dates.append((start_date, end_date))
     else:
         # todo
