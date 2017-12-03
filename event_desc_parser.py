@@ -655,7 +655,7 @@ def parse_desc_from_flacon(url):
         end_hours, end_minutes = 0, 0
 
     one_day_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{4})')
-    interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*[—–]\s*(\d{1,2}) ([А-Яа-я]*) (\d{4})')
+    interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*[—–]\s*(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
     match = one_day_pattern.match(date_raw)
     interval_match = interval_pattern.match(date_raw)
     if match:
@@ -675,8 +675,12 @@ def parse_desc_from_flacon(url):
 
         start_day = int(interval_match.group(1))
         end_day = int(interval_match.group(3))
-        start_year = int(interval_match.group(5))
-        end_year = int(interval_match.group(5))
+        start_year = interval_match.group(5)
+        if start_year:
+            start_year = int(start_year)
+        else:
+            start_year = datetime.datetime.today().year
+        end_year = start_year
         date = datetime.datetime(year=start_year, month=start_month, day=start_day, hour=start_hours,
                                  minute=start_minutes)
         last_date = datetime.datetime(year=end_year, month=end_month, day=end_day, hour=end_hours, minute=end_minutes)
@@ -721,3 +725,6 @@ def parse_desc_from_flacon(url):
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
+
+
+parse_desc_from_flacon("http://flacon.ru/afisha/event/vystavka-russian-sorrow/")

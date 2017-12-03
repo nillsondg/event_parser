@@ -135,6 +135,3 @@ def process_all():
     process_garage()
     process_yandex()
     process_flacon()
-
-
-process_flacon()
