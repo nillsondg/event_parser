@@ -10,7 +10,7 @@ def get_grab():
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
     }
     g = Grab(log_file='out.html', headers=headers)
-    g.setup(timeout=60)
+    g.setup(connect_timeout=60, timeout=60)
     return g
 
 
