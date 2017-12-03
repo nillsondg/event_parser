@@ -383,14 +383,7 @@ def parse_garage_dates(date_raw, time_raw):
     many_days_match = many_days_pattern.match(date_raw)
     time_match = time_pattern.search(time_raw)
 
-    if one_day_match and time_match:
-        month = one_day_match.group(2)
-        date_str = date_raw.replace(month, str(month_to_num(month)))
-        date = datetime.datetime.strptime(date_str + " " + time_match.group(1) + ":" + time_match.group(2),
-                                          "%d %m %Y %H:%M")
-        end_date = date.replace(day=date.day, hour=int(time_match.group(3)), minute=int(time_match.group(4)))
-        return [(date, end_date)]
-    elif many_days_match and time_match:
+    if many_days_match and time_match:
         month1 = many_days_match.group(2)
         month2 = many_days_match.group(5)
         date_str = date_raw.replace(month1, str(month_to_num(month1)))
@@ -415,6 +408,13 @@ def parse_garage_dates(date_raw, time_raw):
             dates.append((start_date, end_date))
 
         return dates
+    elif one_day_match and time_match:
+        month = one_day_match.group(2)
+        date_str = date_raw.replace(month, str(month_to_num(month)))
+        date = datetime.datetime.strptime(date_str + " " + time_match.group(1) + ":" + time_match.group(2),
+                                          "%d %m %Y %H:%M")
+        end_date = date.replace(day=date.day, hour=int(time_match.group(3)), minute=int(time_match.group(4)))
+        return [(date, end_date)]
 
 
 def __parse_event_desc_from_garage(url):
@@ -726,3 +726,6 @@ def parse_desc_from_flacon(url):
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
+
+
+parse_desc_from_garage("https://garagemca.org/ru/event/andrey-velikanov-s-lecture-cycle-ideas-and-forms")
