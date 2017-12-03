@@ -624,6 +624,7 @@ def parse_desc_from_flacon(url):
 
     date_raw = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[0].text.strip().lower()
     time_raw = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[0].xpath('.//br')[0].tail.strip()
+    date_raw = date_raw.replace(u'\xa0', u' ')
 
     # 23 ДЕКАБРЯ 2017
     # 27 НОЯБРЯ—3 ДЕКАБРЯ 2017
