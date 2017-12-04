@@ -343,7 +343,10 @@ def parse_desc_from_tretyako(url):
         if text_elem.text is not None:
             description += BeautifulSoup(tostring(text_elem), "lxml").text
 
-    place = "Москва, " + g.doc.select('//div[@class="museum__address"]').node().text
+    try:
+        place = "Москва, " + g.doc.select('//div[@class="museum__address"]').node().text
+    except IndexError:
+        place = "Москва"
 
     price = 0
 
@@ -740,6 +743,131 @@ def parse_desc_from_flacon(url):
     tags = ["flacon"]
 
     background_style = header_info_block.get("style")
+    img_pattern = re.compile(r"url\(([\w\/\-.]*)\)")
+    match = img_pattern.search(background_style)
+    if match:
+        img_url = base_url + match.group(1)
+        img, filename = get_img(img_url)
+    else:
+        img = get_default_img()
+        filename = "image.png"
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(),
+           "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def parse_desc_from_vinzavod(url):
+    base_url = "http://www.winzavod.ru/"
+    org_id = 9
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    title = g.doc.select('//meta[@property="og:title"]').node().get("content").strip()
+
+    date_block = g.doc.select('//div[@class="exhibition-type__date"]').node()
+
+    date_raw = date_block.text.strip().lower()
+    time_block = date_block.xpath('.//br')
+    time_raw = ""
+    if len(time_block) > 0:
+        time_raw = time_block[0].tail.strip()
+
+    # 12 Декабря — 14 Января 2018
+    # 21 Октября
+    # 17 Октября — 22 Октября 2017
+    # 15:00
+    # 19:00 — 22:00
+
+    time_pattern = re.compile('(\d\d:\d\d)(\s*—\s*)?(\d\d:\d\d)?')
+
+    match = time_pattern.match(time_raw)
+
+    if match:
+        start_hours, start_minutes = match.group(1).split(":")
+        start_hours = int(start_hours)
+        start_minutes = int(start_minutes)
+        end_time = match.group(3)
+        if end_time is not None:
+            end_hours, end_minutes = end_time.split(":")
+            end_hours = int(end_hours)
+            end_minutes = int(end_minutes)
+        else:
+            end_hours, end_minutes = start_hours + 2, start_minutes
+            if end_hours > 23:
+                end_hours = 23
+                end_minutes = 59
+    else:
+        start_hours, start_minutes = 0, 0
+        end_hours, end_minutes = 23, 59
+
+    one_day_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
+    interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*[—–]\s*(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
+    match = one_day_pattern.match(date_raw)
+    interval_match = interval_pattern.match(date_raw)
+
+    if interval_match:
+        start_month = interval_match.group(2)
+        end_month = month_to_num(interval_match.group(4))
+        if start_month:
+            start_month = month_to_num(start_month)
+        else:
+            start_month = end_month
+
+        start_day = int(interval_match.group(1))
+        end_day = int(interval_match.group(3))
+        end_year = interval_match.group(5)
+        if end_year:
+            end_year = int(end_year)
+        else:
+            end_year = datetime.datetime.today().year
+        if start_month > end_month:
+            start_year = end_year - 1
+        else:
+            start_year = end_year
+        date = datetime.datetime(year=start_year, month=start_month, day=start_day, hour=start_hours,
+                                 minute=start_minutes)
+        last_date = datetime.datetime(year=end_year, month=end_month, day=end_day, hour=end_hours, minute=end_minutes)
+        dates = []
+        for day in range((last_date - date).days + 1):
+            start_date = date + datetime.timedelta(day)
+            end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
+            dates.append((start_date, end_date))
+    elif match:
+        month = int(month_to_num(match.group(2)))
+        day = int(match.group(1))
+        year = match.group(3)
+        if year:
+            year = int(year)
+        else:
+            year = datetime.datetime.today().year
+        date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
+        end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
+        dates = [(date, end_date)]
+    else:
+        # todo
+        pass
+
+    description_block = g.doc.select('//div[contains(@class, "exhibition-detail-info__right")]').node()
+
+    texts = description_block.xpath('.//p | .//ul')
+    description = ""
+    for text_elem in texts:
+        description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    map_text = "Москва, 4-й Сыромятнический переулок, 1/8 "
+
+    price = 0
+
+    event_format = g.doc.select('//div[@class="exhibition-type__title"]').node().text
+    tags = ["винзавод", event_format]
+
+    background_style = g.doc.select('//div[@class="exhibition-slider-bg exhibition-slider-bg--1"]').node().get("style")
     img_pattern = re.compile(r"url\(([\w\/\-.]*)\)")
     match = img_pattern.search(background_style)
     if match:

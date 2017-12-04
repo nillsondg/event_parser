@@ -103,8 +103,7 @@ def process_digital_october():
 
 
 def process_planetarium():
-    file_name = "planetarium.txt"
-    __process(file_name, event_desc_parser.parse_desc_from_planetarium)
+    __process("planetarium.txt", event_desc_parser.parse_desc_from_planetarium)
 
 
 def process_strelka():
@@ -127,6 +126,10 @@ def process_flacon():
     __process_bunch("flacon.txt", "Flacon", event_desc_parser.parse_desc_from_flacon)
 
 
+def process_vinzavod():
+    __process_bunch("vinzavod.txt", "Vinzavod", event_desc_parser.parse_desc_from_vinzavod)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
@@ -135,3 +138,4 @@ def process_all():
     process_garage()
     process_yandex()
     process_flacon()
+    process_vinzavod()
