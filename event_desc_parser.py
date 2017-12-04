@@ -761,7 +761,7 @@ def parse_desc_from_flacon(url):
 
 
 def parse_desc_from_vinzavod(url):
-    base_url = "http://www.winzavod.ru/"
+    base_url = "http://www.winzavod.ru"
     org_id = 9
 
     g = get_grab()
@@ -876,6 +876,118 @@ def parse_desc_from_vinzavod(url):
     else:
         img = get_default_img()
         filename = "image.png"
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(),
+           "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def parse_desc_from_gorky_park(url):
+    base_url = "http://park-gorkogo.com"
+    org_id = 2
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    title = g.doc.select('//meta[@property="og:title"]').node().get("content").strip()
+
+    date_block = g.doc.select('//span[@class="_39tx0"]').node()
+
+    datetime_raw = date_block.xpath('.//span')[1].text.strip().lower()
+
+    # 16 декабря – 17 декабря с 12.00 до 15.00
+    # 14 декабря с 19.30 до 21.20
+    # C 28 ноября
+    # 4 августа – 16 февраля с 19.30 до 20.30
+
+    time_pattern = re.compile('(\d\d.\d\d)(\s*до\s*)?(\d\d.\d\d)?')
+    match = time_pattern.search(datetime_raw)
+    if match:
+        start_hours, start_minutes = match.group(1).split(".")
+        start_hours = int(start_hours)
+        start_minutes = int(start_minutes)
+        end_time = match.group(3)
+        if end_time is not None:
+            end_hours, end_minutes = end_time.split(".")
+            end_hours = int(end_hours)
+            end_minutes = int(end_minutes)
+        else:
+            end_hours, end_minutes = start_hours + 2, start_minutes
+            if end_hours > 23:
+                end_hours = 23
+                end_minutes = 59
+    else:
+        start_hours, start_minutes = 0, 0
+        end_hours, end_minutes = 23, 59
+
+    one_day_pattern = re.compile('(с\s*)?(\d{1,2}) ([А-Яа-я]*)')
+    interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)\s*[—–]\s*(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
+    match = one_day_pattern.match(datetime_raw)
+    interval_match = interval_pattern.match(datetime_raw)
+
+    if interval_match:
+        start_month = month_to_num(interval_match.group(2))
+        end_month = month_to_num(interval_match.group(4))
+
+        start_day = int(interval_match.group(1))
+        end_day = int(interval_match.group(3))
+        start_year = datetime.datetime.today().year
+        if start_month < datetime.datetime.today().month and start_month == 1:
+            start_year += 1
+            end_year = start_year
+        elif start_month > end_month:
+            end_year = start_year + 1
+        else:
+            end_year = start_year
+        date = datetime.datetime(year=start_year, month=start_month, day=start_day, hour=start_hours,
+                                 minute=start_minutes)
+        last_date = datetime.datetime(year=end_year, month=end_month, day=end_day, hour=end_hours, minute=end_minutes)
+        dates = []
+        for day in range((last_date - date).days + 1):
+            start_date = date + datetime.timedelta(day)
+            end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
+            dates.append((start_date, end_date))
+    elif match:
+        month = int(month_to_num(match.group(3)))
+        day = int(match.group(2))
+        year = datetime.datetime.today().year
+        if month < datetime.datetime.today().month and month == 1:
+            year += 1
+        date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
+        end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
+        dates = [(date, end_date)]
+    else:
+        # todo
+        pass
+
+    description = ""
+    try:
+        desc_header = g.doc.select('//p[@class="_1qgkv"]').node()
+        description = desc_header.text
+    except IndexError:
+        pass
+    description_block = g.doc.select('//div[@class="_3hm1Z"]').node()
+
+    texts = description_block.xpath('.//p | .//ul')
+    for text_elem in texts:
+        description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    map_text = "г. Москва, ул. Крымский Вал 9, м. Парк культуры"
+
+    price = 0
+
+    tags = ["парк горького"]
+    keywords = g.doc.select('//meta[@name="keywords"]').node().get("content").strip().split('.')
+    for key in keywords:
+        if len(keywords) < 5:
+            keywords.append(key)
+
+    img_url = g.doc.select('//meta[@itemprop="image"]').node().get("content").strip()
+    img, filename = get_img(img_url)
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,

@@ -127,7 +127,11 @@ def process_flacon():
 
 
 def process_vinzavod():
-    __process_bunch("vinzavod.txt", "Vinzavod", event_desc_parser.parse_desc_from_vinzavod)
+    __process_bunch("vinzavod.txt", "Winzavod", event_desc_parser.parse_desc_from_vinzavod)
+
+
+def process_gorky_park():
+    __process_bunch("gorky_park.txt", "Gorky park", event_desc_parser.parse_desc_from_gorky_park)
 
 
 def process_all():
@@ -139,3 +143,4 @@ def process_all():
     process_yandex()
     process_flacon()
     process_vinzavod()
+    process_gorky_park()
