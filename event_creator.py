@@ -134,6 +134,10 @@ def process_gorky_park():
     __process_bunch("gorky_park.txt", "Gorky park", event_desc_parser.parse_desc_from_gorky_park)
 
 
+def process_artplay():
+    __process_bunch("artplay.txt", "Artplay", event_desc_parser.parse_desc_from_artplay)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
@@ -144,3 +148,4 @@ def process_all():
     process_flacon()
     process_vinzavod()
     process_gorky_park()
+    process_artplay()

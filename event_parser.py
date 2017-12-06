@@ -311,6 +311,29 @@ def parse_from_gorky_park():
     print("end check " + do_url)
 
 
+def parse_from_artplay():
+    file_name = "artplay.txt"
+    do_url = "http://www.artplay.ru/events/all"
+    base_url = "http://www.artplay.ru"
+
+    g = get_grab()
+    g.go(do_url)
+    print("check " + do_url)
+    main = g.doc.select('//ul[@class="cat-inside"]').node()
+    events = main.xpath('.//li')
+
+    urls = set()
+    for event in events:
+        url = event.xpath('.//a')[0].get("href")
+        if not url.startswith("http"):
+            url = base_url + url
+        urls.add(url)
+
+    exist_urls = read_checked_urls(file_name=file_name)
+    write_events_to_file(file_name, urls, exist_urls)
+    print("end check " + do_url)
+
+
 def parse_all():
     # parse_from_skolkovo()
     parse_from_planetarium()
@@ -323,3 +346,4 @@ def parse_all():
     parse_from_flacon()
     parse_from_vinzavod()
     parse_from_gorky_park()
+    parse_from_artplay()

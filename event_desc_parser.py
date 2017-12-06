@@ -42,10 +42,10 @@ def get_public_date():
 
 
 def get_default_img(img_name="evendate.png", ext="png"):
-    with open(img_name, "rb") as image_file:
+    with open("images/" + img_name, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
-    return image_horizontal
+    return image_horizontal, img_name
 
 
 def get_img(url):
@@ -197,12 +197,13 @@ def parse_desc_from_planetarium(url):
     location = "г. Москва, ул.Садовая-Кудринская 5, стр. 1, м. Баррикадная, Краснопресненская"
 
     tags = ["Московский планетариум"]
+    img, filename = get_default_img(img_name="planetarium.png")
 
     return {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
             "description": prepare_desc(description),
             "location": location, "price": price, "tags": tags, "detail_info_url": url,
-            "public_at": get_public_date(), "image_horizontal": get_default_img(img_name="planetarium.png"),
-            "filenames": {'horizontal': "image.png"}}
+            "public_at": get_public_date(), "image_horizontal": img,
+            "filenames": {'horizontal': filename}}
 
 
 def process_strelka_date(date_raw, time_raw):
@@ -271,26 +272,19 @@ def parse_desc_from_strelka(url):
     match = img_pattern.search(background_style)
     if match:
         img_url = base_url + match.group(1)
-        img_raw = requests.get(img_url, allow_redirects=True)
-        img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
+        img, filename = get_img(img_url)
     else:
-        img = get_default_img()
+        img, filename = get_default_img()
 
     # map_block = g.doc.select('//div[@class="contact"]').node()
     # map_text = map_block.xpath('.//p')[0].text
-    #
-    # price = 1000
-    #
     tags = ["Стрелка", tag]
 
-    # img_raw = requests.get(img_url, allow_redirects=True)
-    # img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
-    #
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description),
            "location": place, "price": price, "tags": tags, "detail_info_url": url,
            "public_at": get_public_date(), "image_horizontal": img,
-           "filenames": {'horizontal': "image.png"}}
+           "filenames": {'horizontal': filename}}
     return res
 
 
@@ -356,8 +350,7 @@ def parse_desc_from_tretyako(url):
         img_url = base_url + g.doc.select('//img[@class="header-event__img"]').node().get('src')
         img, filename = get_img(img_url)
     except IndexError:
-        img = get_default_img("tretyako.jpg", "jpg")
-        filename = "image.png"
+        img, filename = get_default_img("tretyako.jpg", "jpg")
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
@@ -493,8 +486,7 @@ def __parse_event_desc_from_garage(url):
         img_url = "http:" + match.group(1)
         img, filename = get_img(img_url)
     else:
-        img = get_default_img()
-        filename = "image.png"
+        img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
@@ -563,8 +555,7 @@ def __parse_exhibition_desc_from_garage(url):
         img_url = "http:" + match.group(1)
         img, filename = get_img(img_url)
     else:
-        img = get_default_img()
-        filename = "image.png"
+        img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
@@ -634,11 +625,13 @@ def parse_desc_from_yandex(url):
         if len(tags) < 5:
             tags.append(key)
 
+    img, filename = get_default_img("yandex.jpg", "jpg")
+
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
-           "image_horizontal": get_default_img("yandex.jpg", "jpg"),
-           "filenames": {'horizontal': "image.png"}}
+           "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
     return res
 
 
@@ -749,8 +742,7 @@ def parse_desc_from_flacon(url):
         img_url = base_url + match.group(1)
         img, filename = get_img(img_url)
     else:
-        img = get_default_img()
-        filename = "image.png"
+        img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
@@ -874,8 +866,7 @@ def parse_desc_from_vinzavod(url):
         img_url = base_url + match.group(1)
         img, filename = get_img(img_url)
     else:
-        img = get_default_img()
-        filename = "image.png"
+        img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
@@ -988,6 +979,78 @@ def parse_desc_from_gorky_park(url):
 
     img_url = g.doc.select('//meta[@itemprop="image"]').node().get("content").strip()
     img, filename = get_img(img_url)
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(),
+           "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def parse_desc_from_artplay(url):
+    base_url = "http://www.artplay.ru"
+    org_id = 32
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    main = g.doc.select('//div[@id="content"]').node()
+
+    title = main.xpath(".//h1")[0].text.strip()
+
+    datetime_raw = g.doc.select('//strong[@class="date"]').node().text.strip().lower()
+
+    # 16.01-16.01
+    # 31.12-02.01
+
+    start_hours, start_minutes = 0, 0
+    end_hours, end_minutes = 23, 59
+
+    interval_pattern = re.compile('(\d{1,2}).(\d{1,2})-(\d{1,2}).(\d{1,2})')
+    interval_match = interval_pattern.match(datetime_raw)
+    if interval_match:
+        start_month = int(interval_match.group(2))
+        end_month = int(interval_match.group(4))
+
+        start_day = int(interval_match.group(1))
+        end_day = int(interval_match.group(3))
+        start_year = datetime.datetime.today().year
+        if start_month < datetime.datetime.today().month and start_month == 1:
+            start_year += 1
+            end_year = start_year
+        elif start_month > end_month:
+            end_year = start_year + 1
+        else:
+            end_year = start_year
+        date = datetime.datetime(year=start_year, month=start_month, day=start_day, hour=start_hours,
+                                 minute=start_minutes)
+        last_date = datetime.datetime(year=end_year, month=end_month, day=end_day, hour=end_hours, minute=end_minutes)
+        dates = []
+        for day in range((last_date - date).days + 1):
+            start_date = date + datetime.timedelta(day)
+            end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
+            dates.append((start_date, end_date))
+
+    description = ""
+    try:
+        desc_header = g.doc.select('//p[@class="_1qgkv"]').node()
+        description = desc_header.text
+    except IndexError:
+        pass
+    description_block = g.doc.select('//div[@class="shops-wrap node"]').node()
+
+    texts = description_block.xpath('.//p | .//ul')
+    for text_elem in texts:
+        description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    map_text = "г. Москва, Нижняя Сыромятническая улица, д.10"
+
+    price = 0
+
+    tags = ["artplay"]
+    img, filename = get_default_img("artplay.png")
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
