@@ -311,27 +311,50 @@ def parse_from_gorky_park():
     print("end check " + do_url)
 
 
-def parse_from_artplay():
-    file_name = "artplay.txt"
-    do_url = "http://www.artplay.ru/events/all"
-    base_url = "http://www.artplay.ru"
-
+def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter):
     g = get_grab()
     g.go(do_url)
     print("check " + do_url)
-    main = g.doc.select('//ul[@class="cat-inside"]').node()
-    events = main.xpath('.//li')
+    main = g.doc.select(main_pattern).node()
+    events = main.xpath(events_pattern)
 
     urls = set()
     for event in events:
-        url = event.xpath('.//a')[0].get("href")
-        if not url.startswith("http"):
+        url = url_getter(event)
+        if not url.startswith("http") or not url.startswith("https"):
             url = base_url + url
         urls.add(url)
 
     exist_urls = read_checked_urls(file_name=file_name)
     write_events_to_file(file_name, urls, exist_urls)
     print("end check " + do_url)
+
+
+def parse_from_artplay():
+    file_name = "artplay.txt"
+    do_url = "http://www.artplay.ru/events/all"
+    base_url = "http://www.artplay.ru"
+
+    main_pattern = '//ul[@class="cat-inside"]'
+    events_pattern = './/li'
+
+    def url_getter(event):
+        return event.xpath('.//a')[0].get("href")
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+
+
+def parse_from_center_mars():
+    file_name = "centermars.txt"
+    do_url = "http://centermars.ru/projects/"
+    base_url = "http://centermars.ru"
+    main_pattern = '//div[@id="paginated_list"]'
+    events_pattern = './/a[@class="show-itm"]'
+
+    def url_getter(event):
+        return event.get('href')
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
 def parse_all():
@@ -347,3 +370,4 @@ def parse_all():
     parse_from_vinzavod()
     parse_from_gorky_park()
     parse_from_artplay()
+    parse_from_center_mars()

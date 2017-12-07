@@ -1058,3 +1058,73 @@ def parse_desc_from_artplay(url):
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
+
+
+def parse_desc_from_centermars(url):
+    base_url = "http://centermars.ru"
+    org_id = 114
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    main = g.doc.select('//div[@class="b-prj-sgl"]').node()
+
+    title = main.xpath('.//h1[@class="b-prj-sgl__title hyphen"]')[0].text.strip()
+
+    datetime_raw = g.doc.select('//div[@class="b-prj-sgl__date"]').node().text.strip().lower()
+
+    # '30.11.2017 — 01.02.2018'
+
+    start_hours, start_minutes = 12, 00
+    end_hours, end_minutes = 22, 00
+
+    interval_pattern = re.compile('(\d{1,2}).(\d{1,2}).(\d{4})\s*[-—]\s*(\d{1,2}).(\d{1,2}).(\d{4})')
+    interval_match = interval_pattern.match(datetime_raw)
+    if interval_match:
+        start_month = int(interval_match.group(2))
+        end_month = int(interval_match.group(5))
+
+        start_day = int(interval_match.group(1))
+        end_day = int(interval_match.group(4))
+
+        start_year = int(interval_match.group(3))
+        end_year = int(interval_match.group(6))
+        date = datetime.datetime(year=start_year, month=start_month, day=start_day, hour=start_hours,
+                                 minute=start_minutes)
+        last_date = datetime.datetime(year=end_year, month=end_month, day=end_day, hour=end_hours, minute=end_minutes)
+        dates = []
+        for day in range((last_date - date).days + 1):
+            start_date = date + datetime.timedelta(day)
+            end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
+            dates.append((start_date, end_date))
+
+    description = ""
+    description_block = g.doc.select('//div[@class="b-prj-sgl__content content w-container "]').node()
+
+    texts = description_block.xpath('.//p | .//ul')
+    for text_elem in texts:
+        description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    map_text = "Москва, Пушкарев переулок, дом 5"
+
+    price = 0
+
+    tag = g.doc.select('//div[@class="b-prj-sgl__category"]').node().text.strip()
+    tags = ["Центр МАРС", tag]
+
+    background_style = g.doc.select('//div[@class="b-prj-sgl__img w-container"]').node().get("style")
+    img_pattern = re.compile(r"url\(([\w\/\-.]*)\)")
+    match = img_pattern.search(background_style)
+    if match:
+        img_url = base_url + match.group(1)
+        img, filename = get_img(img_url)
+    else:
+        img, filename = get_default_img()
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(),
+           "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
