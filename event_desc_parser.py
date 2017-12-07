@@ -6,6 +6,7 @@ import re
 import base64
 import requests
 import mimetypes
+import json
 
 
 def get_grab():
@@ -1124,6 +1125,91 @@ def parse_desc_from_centermars(url):
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(),
+           "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def parse_desc_from_mail(url):
+    base_url = "https://corp.mail.ru/"
+    org_id = 141
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    main = g.doc.select('//div[@class="ev__wrapper"]').node()
+
+    title = main.xpath('.//h1[@class="ev__title1"]')[0].text.strip()
+
+    date_raw = g.doc.select('//div[@class="ev__title3"]').node().text.strip().lower()
+    time_raw = main.xpath('//div[@class="ev__title3"]')[1].text.strip().lower()
+
+    # 08 декабря 2017 г., пятница
+    # Начало события в 09.00
+
+    time_pattern = re.compile('(\d\d.\d\d)')
+
+    match = time_pattern.search(time_raw)
+
+    if match:
+        start_hours, start_minutes = match.group(1).split(".")
+        start_hours = int(start_hours)
+        start_minutes = int(start_minutes)
+        end_hours, end_minutes = start_hours + 2, start_minutes
+        if end_hours > 23:
+            end_hours = 23
+            end_minutes = 59
+    else:
+        start_hours, start_minutes = 0, 0
+        end_hours, end_minutes = 23, 59
+
+    one_day_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)\s*(\d{4})')
+    match = one_day_pattern.match(date_raw)
+    if match:
+        month = int(month_to_num(match.group(2)))
+        day = int(match.group(1))
+        year = int(match.group(3))
+        date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
+        end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
+        dates = [(date, end_date)]
+
+    description = ""
+    description_block = g.doc.select('//div[@class="js-mediator-article"]').node()
+
+    texts = description_block.xpath('.//p | .//ul')
+    for text_elem in texts:
+        description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    try:
+        map = g.doc.select(
+            '//div[contains(@class, "leaflet-map leaflet-standard-map leaflet-container leaflet-retina leaflet-fade-anim") or contains(@class, "leaflet-marker")]').node()
+        latitude = map.get('data-latitude')
+        longtitude = map.get('data-longitude')
+
+        req = requests.get(
+            "https://geocode-maps.yandex.ru/1.x/?geocode={},{}&format=json&results=1".format(longtitude, latitude))
+        response = json.loads(req.content)
+
+        map_text = response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["metaDataProperty"][
+            'GeocoderMetaData']["text"]
+    except IndexError:
+        map_text = "Москва, Ленинградский проспект 39, стр. 79"
+
+    price = 0
+    tags = ["Mail.ru"]
+
+    try:
+        img_url = g.doc.select('//meta[@property="og:image"]').node().get("content").strip()
+        if not img_url.startswith("http") or not img_url.startswith("https"):
+            img_url = base_url + img_url
+        img, filename = get_img(img_url)
+    except IndexError:
+        img, filename = get_default_img()
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates), "location": map_text,
+           "description": prepare_desc(description), "price": price, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}

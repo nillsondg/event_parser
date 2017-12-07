@@ -357,6 +357,19 @@ def parse_from_center_mars():
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
+def parse_from_mail():
+    file_name = "mail.txt"
+    do_url = "https://corp.mail.ru/ru/press/events/"
+    base_url = "https://corp.mail.ru"
+    main_pattern = '//ul[@class="ev__row ev__tiles"]'
+    events_pattern = './/li[@class="ev__col-4 ev__etype1"]'
+
+    def url_getter(event):
+        return event.xpath('.//a[@class="ev__tile_title"]')[0].get('href')
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+
+
 def parse_all():
     # parse_from_skolkovo()
     parse_from_planetarium()
@@ -371,3 +384,4 @@ def parse_all():
     parse_from_gorky_park()
     parse_from_artplay()
     parse_from_center_mars()
+    parse_from_mail()
