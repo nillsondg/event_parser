@@ -1190,7 +1190,7 @@ def parse_desc_from_mail(url):
 
         req = requests.get(
             "https://geocode-maps.yandex.ru/1.x/?geocode={},{}&format=json&results=1".format(longtitude, latitude))
-        response = json.loads(req.content)
+        response = json.loads(req.content.decode('utf-8'))
 
         map_text = response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["metaDataProperty"][
             'GeocoderMetaData']["text"]
