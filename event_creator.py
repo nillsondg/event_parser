@@ -146,6 +146,10 @@ def process_mail():
     __process_bunch("mail.txt", "Mail.ru", event_desc_parser.parse_desc_from_mail)
 
 
+def process_ditelegraph():
+    __process_bunch("ditelegraph.txt", "DI Telegraph", event_desc_parser.parse_desc_from_ditelegraph)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
@@ -159,3 +163,4 @@ def process_all():
     process_artplay()
     process_centermars()
     process_mail()
+    process_ditelegraph()

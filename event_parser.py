@@ -370,6 +370,19 @@ def parse_from_mail():
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
+def parse_from_ditelegraph():
+    file_name = "ditelegraph.txt"
+    do_url = "http://ditelegraph.com"
+    base_url = "http://ditelegraph.com"
+    main_pattern = '//div[@class="posts current_posts"]'
+    events_pattern = './/article'
+
+    def url_getter(event):
+        return event.xpath('.//a[@class="img"]')[0].get('href')
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+
+
 def parse_all():
     # parse_from_skolkovo()
     parse_from_planetarium()
@@ -385,3 +398,4 @@ def parse_all():
     parse_from_artplay()
     parse_from_center_mars()
     parse_from_mail()
+    parse_from_ditelegraph()

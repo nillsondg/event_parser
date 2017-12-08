@@ -1214,3 +1214,79 @@ def parse_desc_from_mail(url):
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
+
+
+def parse_desc_from_ditelegraph(url):
+    base_url = "http://ditelegraph.com"
+    org_id = 26
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    main = g.doc.select('//div[@class="content"]').node()
+
+    title_block = main.xpath('.//h1')[0]
+    title = title_block.xpath('.//span')[0].tail.strip()
+    format_str = title_block.xpath('.//span')[0].text.strip()
+    format_str = format_str.replace(":", "")
+
+    date_block = main.xpath('.//div[@class="right fly"]')[0]
+    date_raw = date_block[0].text.strip()
+    time_raw = date_block.xpath('.//span')[0].text.strip()
+
+    # 18 декабря 2017
+    # 20:00
+
+    time_pattern = re.compile('(\d\d:\d\d)')
+
+    match = time_pattern.search(time_raw)
+
+    if match:
+        start_hours, start_minutes = match.group(1).split(":")
+        start_hours = int(start_hours)
+        start_minutes = int(start_minutes)
+        end_hours, end_minutes = start_hours + 2, start_minutes
+        if end_hours > 23:
+            end_hours = 23
+            end_minutes = 59
+    else:
+        start_hours, start_minutes = 0, 0
+        end_hours, end_minutes = 23, 59
+
+    one_day_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)\s*(\d{4})')
+    match = one_day_pattern.match(date_raw)
+    if match:
+        month = int(month_to_num(match.group(2)))
+        day = int(match.group(1))
+        year = int(match.group(3))
+        date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
+        end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
+        dates = [(date, end_date)]
+
+    description = ""
+    description_block = g.doc.select('//div[@class="left"]').node()
+
+    texts = description_block.xpath('.//p | .//ul')
+    for text_elem in texts:
+        description += BeautifulSoup(tostring(text_elem), "lxml").text
+
+    map_text = "Москва, ул. Тверская, д.7, Вход со стороны Газетного переулка, 9 подъезд, 5 этаж"
+
+    price = 0
+    tags = ["DI Telegraph", format_str]
+
+    try:
+        img_url = description_block.xpath(".//img")[0].get("src").strip()
+        if not img_url.startswith("http") or not img_url.startswith("https"):
+            img_url = base_url + img_url
+        img, filename = get_img(img_url)
+    except IndexError:
+        img, filename = get_default_img()
+
+    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates), "location": map_text,
+           "description": prepare_desc(description), "price": price, "tags": tags,
+           "detail_info_url": url, "public_at": get_public_date(),
+           "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
