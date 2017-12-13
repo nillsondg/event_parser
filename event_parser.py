@@ -321,7 +321,7 @@ def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, u
     urls = set()
     for event in events:
         url = url_getter(event)
-        if not url.startswith("http") or not url.startswith("https"):
+        if not url.startswith("http") and not url.startswith("https"):
             url = base_url + url
         urls.add(url)
 
@@ -381,6 +381,19 @@ def parse_from_ditelegraph():
         return event.xpath('.//a[@class="img"]')[0].get('href')
 
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+
+
+# def parse_from_vishka():
+#     file_name = "vishka.txt"
+#     do_url = "https://www.hse.ru/news/announcements"
+#     base_url = "https://www.hse.ru"
+#     main_pattern = '//div[@class="content__inner"]'
+#     events_pattern = './/div[@class="b-events__item js-events-item" and not(contains(@data-filter, "private"))]'
+#
+#     def url_getter(event):
+#         return event.xpath('.//a')[0].get('href')
+#
+#     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
 def parse_all():

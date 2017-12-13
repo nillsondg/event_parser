@@ -63,28 +63,39 @@ def get_img(url):
 def month_to_num(month):
     return {
         'января': 1,
+        'январь': 1,
         'янв': 1,
         'февраля': 2,
+        'февраль': 2,
         'фев': 2,
         'марта': 3,
+        'март': 3,
         'мар': 3,
         'апреля': 4,
+        'апрель': 4,
         'апр': 4,
         'мая': 5,
         'май': 5,
         'июня': 6,
+        'июнь': 6,
         'июн': 6,
         'июля': 7,
+        'июль': 7,
         'июл': 7,
         'августа': 8,
+        'август': 8,
         'авг': 8,
         'сентября': 9,
+        'сентябрь': 9,
         'сен': 9,
         'октября': 10,
+        'октябрь': 10,
         'окт': 10,
         'ноября': 11,
+        'ноябрь': 11,
         'ноя': 11,
         'декабря': 12,
+        'декабрь': 12,
         'дек': 12
     }[month]
 
@@ -589,8 +600,11 @@ def parse_desc_from_yandex(url):
     city = header_info_block.xpath('.//div[contains(@class, "event-header__place")]')[0].text.strip()
 
     # 5 ДЕКАБРЯ, 18:30
+    # ДЕКАБРЬ
     one_day_pattern = re.compile('\d{1,2} ([А-Яа-я]*), \d\d:\d\d')
+    month_pattern = re.compile('([А-Яа-я]*)')
     match = one_day_pattern.match(datetime_raw)
+    month_match = month_pattern.match(datetime_raw)
     if match:
         month = match.group(1)
         date_str = datetime_raw.replace(month, str(month_to_num(month)))
@@ -600,13 +614,24 @@ def parse_desc_from_yandex(url):
             year += 1
 
         datetime_str = date_str + " " + str(year)
+
+        date = datetime.datetime.strptime(datetime_str, "%d %m, %H:%M %Y")
+        end_date = date + datetime.timedelta(hours=2)
+        dates = [(date, end_date)]
+    elif month_match:
+        month = month_to_num(month_match.group(1))
+        year = datetime.datetime.today().year
+
+        date = datetime.datetime(year=year, month=month, day=1, hour=0, minute=0)
+        last_date = date + datetime.timedelta(days=30)
+        dates = []
+        for day in range((last_date - date).days + 1):
+            start_date = date + datetime.timedelta(day)
+            end_date = date.replace(hour=23, minute=59) + datetime.timedelta(day)
+            dates.append((start_date, end_date))
     else:
         pass
         # todo
-
-    date = datetime.datetime.strptime(datetime_str, "%d %m, %H:%M %Y")
-    end_date = date + datetime.timedelta(hours=2)
-    dates = [(date, end_date)]
 
     description_block = g.doc.select('//div[contains(@class, "event-description")]').node()
     texts = description_block.xpath('.//p')
@@ -1271,7 +1296,7 @@ def parse_desc_from_ditelegraph(url):
     for text_elem in texts:
         description += BeautifulSoup(tostring(text_elem), "lxml").text
 
-    map_text = "Москва, ул. Тверская, д.7, Вход со стороны Газетного переулка, 9 подъезд, 5 этаж"
+    map_text = "Москва, ул. Тверская, д.7, 9 подъезд, 5 этаж"
 
     price = 0
     tags = ["DI Telegraph", format_str]
