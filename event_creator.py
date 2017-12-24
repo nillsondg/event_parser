@@ -115,7 +115,7 @@ def process_digital_october():
 
 
 def process_planetarium():
-    __process("planetarium.txt", event_desc_parser.parse_desc_from_planetarium)
+    __process_bunch("planetarium.txt", "Planetarium (CHANGE DATES)", event_desc_parser.parse_desc_from_planetarium)
 
 
 def process_strelka():

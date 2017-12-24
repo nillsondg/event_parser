@@ -1260,8 +1260,11 @@ def parse_desc_from_ditelegraph(url):
 
     title_block = main.xpath('.//h1')[0]
     title = title_block.xpath('.//span')[0].tail.strip()
-    format_str = title_block.xpath('.//span')[0].text.strip()
-    format_str = format_str.replace(":", "")
+    try:
+        format_str = title_block.xpath('.//span')[0].text.strip()
+        format_str = format_str.replace(":", "")
+    except AttributeError:
+        format_str = ""
 
     date_block = main.xpath('.//div[@class="right fly"]')[0]
     date_raw = date_block[0].text.strip()
