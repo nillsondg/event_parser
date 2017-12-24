@@ -941,9 +941,10 @@ def parse_desc_from_gorky_park(url):
             end_minutes = int(end_minutes)
         else:
             end_hours, end_minutes = start_hours + 2, start_minutes
-            if end_hours > 23:
-                end_hours = 23
-                end_minutes = 59
+        if end_hours > 23 or end_hours < start_hours:
+            end_hours = 23
+            end_minutes = 59
+
     else:
         start_hours, start_minutes = 0, 0
         end_hours, end_minutes = 23, 59

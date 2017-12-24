@@ -2,21 +2,8 @@ import requests
 import event_desc_parser
 import json
 import parse_logger
-import smtplib
 import time
 import config
-
-
-# from parse_logger import log_event_error
-
-
-def get_email_server():
-    if config.SMTP_SERVER == 'smtp.yandex.ru':
-        server = smtplib.SMTP_SSL(config.SMTP_SERVER)
-    else:
-        server = smtplib.SMTP(config.SMTP_SERVER, 25)
-    server.login(config.EMAIL_LOGIN, config.EMAIL_PASS)
-    return server
 
 
 def post_to_evendate(event_desc):
@@ -28,46 +15,23 @@ def post_to_evendate(event_desc):
         evendate_url = "https://evendate.io/event/" + str(json.loads(r.text)["data"]["event_id"])
         print("POSTED " + evendate_url)
         return evendate_url
-
-
-def __send_email(server, for_url, from_url):
-    from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN
-    to_addr = 'Mr. Poster <%s>' % config.TRELLO_EMAIL
-    subj = 'New event'
-    msg_txt = 'Change image for: ' + for_url + " from: " + from_url + ""
-
-    msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_txt)
-    server.sendmail(from_addr, to_addr, msg)
-
-
-def fast_send_email(org, msg_text):
-    send_email_for_org(get_email_server(), org, msg_text)
-
-
-def send_email_for_org(server, org, msg_text):
-    if msg_text == "":
-        return
-    from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN
-    to_addr = 'Mr. Poster <%s>' % config.TRELLO_EMAIL
-    subj = 'New events for ' + org
-
-    msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_text)
-    server.sendmail(from_addr, to_addr, msg)
+    else:
+        parse_logger.log_posting_error(event_desc['detail_info_url'], r.text)
 
 
 def __process(file_name, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
-    server = get_email_server()
+    server = parse_logger.get_email_server()
 
     for url in process_set:
         res_url = post_to_evendate(processor(url))
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
-            __send_email(server, res_url, url)
+            parse_logger.send_email(server, res_url, url)
         else:
-            __send_email(server, "ERROR", url)
+            parse_logger.send_email(server, "ERROR", url)
         parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
         time.sleep(10)
 
@@ -87,7 +51,7 @@ def __process_bunch(file_name, org, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
-    server = get_email_server()
+    server = parse_logger.get_email_server()
 
     done_list = []
     error_list = []
@@ -106,7 +70,7 @@ def __process_bunch(file_name, org, processor):
             error_list.append(url)
         time.sleep(10)
 
-    send_email_for_org(server, org, prepare_msg_text(done_list, error_list))
+    parse_logger.send_email_for_org(server, org, prepare_msg_text(done_list, error_list))
     server.quit()
 
 
@@ -176,3 +140,6 @@ def process_all():
     process_centermars()
     process_mail()
     process_ditelegraph()
+
+
+process_gorky_park()
