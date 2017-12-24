@@ -1,4 +1,5 @@
 import datetime
+import event_creator
 
 events_folder = "events/"
 events_desc_folders = "events_desc/"
@@ -27,3 +28,13 @@ def read_completed_urls(file_name):
 
 def read_checked_urls(file_name):
     return __read_events_from_file(events_folder, file_name)
+
+
+def log_catalog_error(org, e):
+    print("ERROR PARSING CATALOG", e)
+    event_creator.fast_send_email(org, "ERROR PARSING CATALOG " + str(e))
+
+
+def log_event_error(org, e):
+    print("ERROR PARSING EVENT", e)
+    event_creator.fast_send_email(org, "ERROR PARSING EVENT " + str(e))

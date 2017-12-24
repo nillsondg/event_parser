@@ -7,6 +7,9 @@ import time
 import config
 
 
+# from parse_logger import log_event_error
+
+
 def get_email_server():
     if config.SMTP_SERVER == 'smtp.yandex.ru':
         server = smtplib.SMTP_SSL(config.SMTP_SERVER)
@@ -35,6 +38,10 @@ def __send_email(server, for_url, from_url):
 
     msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_txt)
     server.sendmail(from_addr, to_addr, msg)
+
+
+def fast_send_email(org, msg_text):
+    send_email_for_org(get_email_server(), org, msg_text)
 
 
 def send_email_for_org(server, org, msg_text):
@@ -86,7 +93,12 @@ def __process_bunch(file_name, org, processor):
     error_list = []
 
     for url in process_set:
-        res_url = post_to_evendate(processor(url))
+        try:
+            res_url = post_to_evendate(processor(url))
+        except Exception as e:
+            error_list.append(url)
+            print("ERROR PARSING EVENT ", e)
+            continue
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
             done_list.append((res_url, url))

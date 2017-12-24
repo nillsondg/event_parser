@@ -673,8 +673,15 @@ def parse_desc_from_flacon(url):
 
     header_info_block = g.doc.select('//section[@class="preview-section_wrap"]').node()
 
-    date_raw = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[0].text.strip().lower()
-    time_raw = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[0].xpath('.//br')[0].tail.strip()
+    try:
+        date_block = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[0]
+        date_raw = date_block.text.strip().lower()
+        time_raw = date_block.xpath('.//br')[0].tail.strip()
+    except:
+        date_block = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[2]
+        date_raw = date_block.text.strip().lower()
+        time_raw = date_block.xpath('.//br')[0].tail.strip()
+
     date_raw = date_raw.replace(u'\xa0', u' ')
 
     # 23 ДЕКАБРЯ 2017

@@ -1,6 +1,7 @@
 from grab import Grab
 import datetime
 from parse_logger import read_checked_urls
+from parse_logger import log_catalog_error as log_error
 
 urls_folder = "events/"
 
@@ -21,95 +22,6 @@ def write_events_to_file(file_name, url_set, exist_url_set):
             f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + url + "\n")
             print("added " + url)
     f.close()
-
-
-def parse_from_digit_october():
-    file_name = "digit_october.txt"
-    do_url = "http://digitaloctober.ru/ru/events"
-    base_url = "http://digitaloctober.ru"
-
-    g = get_grab()
-    g.go(do_url)
-    print("check " + do_url)
-    main = g.doc.select('//div[@class="schedule_page"]').node()
-    events = main.xpath('.//a[@href]')
-
-    urls = set()
-    for event in events:
-        url = event.get("href")
-        if not url.startswith("http"):
-            url = base_url + url
-            urls.add(url)
-        else:
-            # add only local url cause there ara external urls in description
-            pass
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + do_url)
-
-
-def parse_from_strelka():
-    file_name = "strelka.txt"
-    strelka_url = "http://strelka.com/ru/events"
-    base_url = "http://strelka.com"
-
-    g = get_grab()
-    g.go(strelka_url)
-    print("check " + strelka_url)
-
-    event_blocks = list()
-    event_blocks.append(g.doc.select('//div[@class="new_container new_blocks_container"]').node())
-
-    try:
-        event_blocks.append(g.doc.select('//div[@class="new_container new_cinema_container"]').node())
-    except IndexError:
-        pass
-    try:
-        event_blocks.append(g.doc.select('//div[@class="new_container new_discussions_container"]').node())
-    except IndexError:
-        pass
-    try:
-        event_blocks.append(g.doc.select('//div[@class="new_container new_yellow_container"]').node())
-    except IndexError:
-        pass
-
-    urls = set()
-    for event_block in event_blocks:
-        events = event_block.xpath('.//a[@href and @class!="new_summer_button_all"]')
-        for event in events:
-            url = event.get("href")
-            if not url.startswith("http"):
-                url = base_url + url
-            urls.add(url)
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + strelka_url)
-
-
-def parse_from_planetarium():
-    planetarium_url = "http://www.planetarium-moscow.ru/billboard/events/"
-    file_name = "planetarium.txt"
-    base_url = "http://www.planetarium-moscow.ru"
-
-    g = get_grab()
-    g.go(planetarium_url)
-    print("check " + planetarium_url)
-
-    main = g.doc.select('//div[@class="leftcolumn"]').node()
-    events = main.xpath('.//a[@href and not(@onclick) and not(@onmouseover) and not(@class="orange")]')
-
-    urls = set()
-    for event in events:
-        url = event.get("href")
-        if not url.startswith("http"):
-            url = base_url + url
-        urls.add(url)
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + planetarium_url)
 
 
 def parse_from_skolkovo():
@@ -160,30 +72,6 @@ def parse_from_lumiere():
     print("end check " + lumiere_url)
 
 
-def parse_from_tretyako():
-    tretyako_url = "http://www.tretyakovgallery.ru/events/"
-    file_name = "tretyako.txt"
-    base_url = "http://www.tretyakovgallery.ru"
-
-    g = get_grab()
-    g.go(tretyako_url)
-    print("check " + tretyako_url)
-
-    main = g.doc.select('//div[@class="events__list events-list"]').node()
-    events = main.xpath('.//div[@class="row"]')
-
-    urls = set()
-    for event in events:
-        url = event.xpath('.//a[@class="event-item__name"]')[0].get("href")
-        if not url.startswith("http"):
-            url = base_url + url
-            urls.add(url)
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + base_url)
-
-
 def parse_from_garage():
     garage_url = "https://garagemca.org/ru/calendar"
     file_name = "garage.txt"
@@ -215,31 +103,129 @@ def parse_from_garage():
     print("end check " + base_url)
 
 
+def parse_from_strelka():
+    file_name = "strelka.txt"
+    strelka_url = "http://strelka.com/ru/events"
+    base_url = "http://strelka.com"
+
+    g = get_grab()
+    g.go(strelka_url)
+    print("check " + strelka_url)
+
+    event_blocks = list()
+    event_blocks.append(g.doc.select('//div[@class="new_container new_blocks_container"]').node())
+
+    try:
+        event_blocks.append(g.doc.select('//div[@class="new_container new_cinema_container"]').node())
+    except IndexError:
+        pass
+    try:
+        event_blocks.append(g.doc.select('//div[@class="new_container new_discussions_container"]').node())
+    except IndexError:
+        pass
+    try:
+        event_blocks.append(g.doc.select('//div[@class="new_container new_yellow_container"]').node())
+    except IndexError:
+        pass
+
+    urls = set()
+    for event_block in event_blocks:
+        events = event_block.xpath('.//a[@href and @class!="new_summer_button_all"]')
+        for event in events:
+            url = event.get("href")
+            if not url.startswith("http"):
+                url = base_url + url
+            urls.add(url)
+
+    exist_urls = read_checked_urls(file_name=file_name)
+    write_events_to_file(file_name, urls, exist_urls)
+    print("end check " + strelka_url)
+
+
+def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter):
+    g = get_grab()
+    g.go(do_url)
+    print("check " + do_url)
+
+    try:
+        main = g.doc.select(main_pattern).node()
+        events = main.xpath(events_pattern)
+
+        urls = set()
+        for event in events:
+            url = url_getter(event)
+            if url is None:
+                continue
+            if not url.startswith("http") and not url.startswith("https"):
+                url = base_url + url
+            urls.add(url)
+
+        exist_urls = read_checked_urls(file_name=file_name)
+        write_events_to_file(file_name, urls, exist_urls)
+
+    except Exception as e:
+        log_error("file_name", e)
+    print("end check " + do_url)
+
+
+def parse_from_digit_october():
+    file_name = "digit_october.txt"
+    do_url = "http://digitaloctober.ru/ru/events"
+    base_url = "http://digitaloctober.ru"
+
+    main_pattern = '//div[@class="schedule_page"]'
+    events_pattern = './/a[@href]'
+
+    def url_getter(event):
+        return event.get("href")
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+
+
+def parse_from_planetarium():
+    do_url = "http://www.planetarium-moscow.ru/billboard/events/"
+    file_name = "planetarium.txt"
+    base_url = "http://www.planetarium-moscow.ru"
+
+    main_pattern = '//div[@class="leftcolumn"]'
+    events_pattern = './/a[@href and not(@onclick) and not(@onmouseover) and not(@class="orange")]'
+
+    def url_getter(event):
+        return event.get("href")
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+
+
+def parse_from_tretyako():
+    do_url = "http://www.tretyakovgallery.ru/events/"
+    file_name = "tretyako.txt"
+    base_url = "http://www.tretyakovgallery.ru"
+
+    main_pattern = '//div[@class="events__list events-list"]'
+    events_pattern = './/div[@class="row"]'
+
+    def url_getter(event):
+        return event.xpath('.//a[@class="event-item__name"]')[0].get("href")
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+
+
 def parse_from_yandex():
     file_name = "yandex.txt"
     do_url = "https://events.yandex.ru"
     base_url = "https://events.yandex.ru"
 
-    g = get_grab()
-    g.go(do_url)
-    print("check " + do_url)
-    main = g.doc.select('//div[contains(@class, "events-calendar__cells")]').node()
-    events = main.xpath('.//div[contains(@class, "events-calendar__cell")]')
+    main_pattern = '//div[contains(@class, "events-calendar__cells")]'
+    events_pattern = './/div[contains(@class, "events-calendar__cell")]'
 
-    urls = set()
-    for event in events:
+    def url_getter(event):
         url_block = event.xpath('.//a[contains(@class, "action-announce") '
                                 'and contains(@class, "action-announce_type_future")]')
         if len(url_block) == 0:
-            break
-        url = url_block[0].get("href")
-        if not url.startswith("https"):
-            url = base_url + url
-        urls.add(url)
+            return None
+        return url_block[0].get("href")
 
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + do_url)
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
 def parse_from_flacon():
@@ -247,22 +233,13 @@ def parse_from_flacon():
     do_url = "http://flacon.ru/afisha/"
     base_url = "http://flacon.ru"
 
-    g = get_grab()
-    g.go(do_url)
-    print("check " + do_url)
-    main = g.doc.select('//div[contains(@class, "album-block_wrap")]').node()
-    events = main.xpath('.//div[contains(@class, "album-item")]')
+    main_pattern = '//div[contains(@class, "album-block_wrap")]'
+    events_pattern = './/div[contains(@class, "album-item")]'
 
-    urls = set()
-    for event in events:
-        url = event.xpath('.//a')[0].get("href")
-        if not url.startswith("http"):
-            url = base_url + url
-        urls.add(url)
+    def url_getter(event):
+        return event.xpath('.//a')[0].get("href")
 
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + do_url)
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
 def parse_from_vinzavod():
@@ -270,22 +247,13 @@ def parse_from_vinzavod():
     do_url = "http://www.winzavod.ru/calendar/"
     base_url = "http://www.winzavod.ru"
 
-    g = get_grab()
-    g.go(do_url)
-    print("check " + do_url)
-    main = g.doc.select('//div[contains(@class, "main-inner")]').node()
-    events = main.xpath('.//a[contains(@class, "item small")]')
+    main_pattern = '//div[contains(@class, "main-inner")]'
+    events_pattern = './/a[contains(@class, "item small")]'
 
-    urls = set()
-    for event in events:
-        url = event.get("href")
-        if not url.startswith("http"):
-            url = base_url + url
-        urls.add(url)
+    def url_getter(event):
+        return event.get("href")
 
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + do_url)
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
 def parse_from_gorky_park():
@@ -293,41 +261,13 @@ def parse_from_gorky_park():
     do_url = "http://park-gorkogo.com/events"
     base_url = "http://park-gorkogo.com"
 
-    g = get_grab()
-    g.go(do_url)
-    print("check " + do_url)
-    main = g.doc.select('//section[contains(@class, "Pdxih")]').node()
-    events = main.xpath('.//section[contains(@class, "_1ExJg")]')
+    main_pattern = '//section[contains(@class, "Pdxih")]'
+    events_pattern = './/section[contains(@class, "_1ExJg")]'
 
-    urls = set()
-    for event in events:
-        url = event.xpath('.//a[@class="_1fusP"]')[0].get("href")
-        if not url.startswith("http"):
-            url = base_url + url
-        urls.add(url)
+    def url_getter(event):
+        return event.xpath('.//a[@class="_1fusP"]')[0].get("href")
 
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + do_url)
-
-
-def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter):
-    g = get_grab()
-    g.go(do_url)
-    print("check " + do_url)
-    main = g.doc.select(main_pattern).node()
-    events = main.xpath(events_pattern)
-
-    urls = set()
-    for event in events:
-        url = url_getter(event)
-        if not url.startswith("http") and not url.startswith("https"):
-            url = base_url + url
-        urls.add(url)
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + do_url)
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
 def parse_from_artplay():
@@ -397,13 +337,18 @@ def parse_from_ditelegraph():
 
 
 def parse_all():
-    # parse_from_skolkovo()
+    try:
+        parse_from_strelka()
+    except Exception as e:
+        log_error("strelka", e)
+    try:
+        parse_from_garage()
+    except Exception as e:
+        log_error("garage", e)
+
     parse_from_planetarium()
-    parse_from_strelka()
-    # parse_from_lumiere()
     parse_from_digit_october()
     parse_from_tretyako()
-    parse_from_garage()
     parse_from_yandex()
     parse_from_flacon()
     parse_from_vinzavod()
