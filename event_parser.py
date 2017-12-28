@@ -177,7 +177,10 @@ def parse_from_digit_october():
     events_pattern = './/a[@href]'
 
     def url_getter(event):
-        return event.get("href")
+        url = event.get("href")
+        if not url.startswith("/") or not url.startswith(base_url):
+            return None
+        return url
 
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
@@ -191,7 +194,10 @@ def parse_from_planetarium():
     events_pattern = './/a[@href and not(@onclick) and not(@onmouseover) and not(@class="orange")]'
 
     def url_getter(event):
-        return event.get("href")
+        url = event.get("href")
+        if "/billboard/today/" in url:
+            url = url.replace("/today/", "/events/")
+        return url
 
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
