@@ -95,7 +95,16 @@ def get_eventdesc_from_mincult(place_id, event_json):
             new_dates.append(date)
         return new_dates
 
+    import re
+
+    def cleanhtml(raw_html):
+        cleanr = re.compile('<.*?>')
+        cleantext = re.sub(cleanr, ' ', raw_html)
+        return cleantext
+
     def prepare_desc(desc):
+        desc = cleanhtml(desc)
+        desc = desc.replace("  ", " ")
         if len(desc) > 2000:
             return desc[:2000]
         return desc
@@ -121,7 +130,8 @@ def get_eventdesc_from_mincult(place_id, event_json):
     detail_url = detail_url_format.format(id=event_json["_id"])
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_evendate_dates(dates), "location": location,
-           "description": prepare_desc(description), "is_free": is_free, "price": price, "tags": tags,
+           "description": prepare_desc(description), "is_free": is_free, "price": price,
+           "tags": tags,
            "detail_info_url": detail_url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -187,3 +197,6 @@ def process_all():
     process_org(9637)
     # Национальная художественная галерея «Хазинэ»
     process_org(21299)
+
+
+process_org(6201)
