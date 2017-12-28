@@ -7,16 +7,22 @@ import config
 
 
 def post_to_evendate(event_desc):
-    print("posting " + event_desc['detail_info_url'])
+    print("posting " + event_desc['detail_info_url'] + "\r\n" + event_desc["title"])
     headers = {'Authorization': config.AUTH_TOKEN}
     r = requests.post("https://evendate.io/api/v1/events/", data=json.dumps(event_desc), headers=headers)
     print(r.status_code, r.reason)
     if r.status_code == 200:
-        evendate_url = "https://evendate.io/event/" + str(json.loads(r.text)["data"]["event_id"])
+        event = json.loads(r.text)["data"]
+        evendate_url = format_evendate_event_url(event["event_id"])
         print("POSTED " + evendate_url)
-        return evendate_url
+        return evendate_url, event["event_id"]
     else:
         parse_logger.log_posting_error(event_desc['detail_info_url'], r.text)
+        return None, None
+
+
+def format_evendate_event_url(event_id):
+    return "https://evendate.io/event/" + str(event_id)
 
 
 def __process(file_name, processor):
@@ -140,6 +146,3 @@ def process_all():
     process_centermars()
     process_mail()
     process_ditelegraph()
-
-
-process_gorky_park()

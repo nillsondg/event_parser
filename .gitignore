@@ -3,5 +3,6 @@ __pycache__
 config.py
 events
 events_desc
+mincult_events
 *.pem
 out.html

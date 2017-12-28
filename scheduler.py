@@ -3,6 +3,7 @@ from threading import Timer
 import event_parser
 import event_creator
 import one_step_parser
+from min_cult import process_all as mincult_process
 
 x = datetime.today()
 y = x + timedelta(days=1)
@@ -18,6 +19,8 @@ def schedule():
     print("Start parsing")
     event_creator.process_all()
     one_step_parser.parse_from_cinemapark()
+    print("Start getting from mincult")
+    mincult_process()
     print(str(datetime.today()) + "\tDone")
 
     t = Timer(secs, schedule)
