@@ -163,7 +163,7 @@ def process_org(place_id):
             else:
                 error_list.append("place_id: {}, _id: {}".format(place_id, _id))
 
-    send_email_for_org(get_email_server(), place_id, prepare_msg_text(done_list, error_list, update_list))
+    send_email_for_org(get_email_server(), str(place_id), prepare_msg_text(done_list, error_list, update_list))
 
 
 def get_evendate_org_id(place_id):

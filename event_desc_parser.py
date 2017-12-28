@@ -340,11 +340,13 @@ def parse_desc_from_tretyako(url):
     text_desc_block = event_description_block.xpath('.//div[@class="col-sm-7"]')[0]
 
     try:
-        description = text_desc_block.xpath('.//div[@class="event-desc__lid"]')[0].text
+        description = text_desc_block.xpath('.//div[@class="event-desc__lid"]')[0].text + "\r\n"
     except IndexError:
         description = ""
 
     texts = text_desc_block.xpath('.//p')
+    if len(texts) == 1 and texts[0].text is None:
+        texts = texts[0]
     for text_elem in texts:
         if text_elem.text is not None:
             description += BeautifulSoup(tostring(text_elem), "lxml").text
@@ -602,8 +604,10 @@ def parse_desc_from_yandex(url):
     # 5 ДЕКАБРЯ, 18:30
     # ДЕКАБРЬ
     one_day_pattern = re.compile('\d{1,2} ([А-Яа-я]*), \d\d:\d\d')
+    day_pattern = re.compile(('\d{1,2} ([А-Яа-я]*) (\d{4})'))
     month_pattern = re.compile('([А-Яа-я]*)')
     match = one_day_pattern.match(datetime_raw)
+    day_match = day_pattern.match(datetime_raw)
     month_match = month_pattern.match(datetime_raw)
     if match:
         month = match.group(1)
@@ -616,6 +620,14 @@ def parse_desc_from_yandex(url):
         datetime_str = date_str + " " + str(year)
 
         date = datetime.datetime.strptime(datetime_str, "%d %m, %H:%M %Y")
+        end_date = date + datetime.timedelta(hours=2)
+        dates = [(date, end_date)]
+    elif day_match:
+        month = day_match.group(1)
+        date_str = datetime_raw.replace(month, str(month_to_num(month)))
+
+        date = datetime.datetime.strptime(date_str, "%d %m %Y")
+        date = date.replace(hour=10)
         end_date = date + datetime.timedelta(hours=2)
         dates = [(date, end_date)]
     elif month_match:
