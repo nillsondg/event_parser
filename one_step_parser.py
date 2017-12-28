@@ -36,7 +36,7 @@ def parse_from_cinemapark():
     base_url = "http://www.cinemapark.ru"
     org_id = 13
 
-    server = event_creator.get_email_server()
+    server = parse_logger.get_email_server()
 
     done_list = []
     error_list = []
