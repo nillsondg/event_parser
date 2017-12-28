@@ -46,9 +46,9 @@ def log_posting_error(url, error_text):
     fast_send_email(url, "ERROR POSTING EVENT " + error_text)
 
 
-def log_loading_mincult_error(place_id, error_text):
-    print("ERROR LOADING MINCULT EVENTS", error_text)
-    fast_send_email(place_id, "ERROR LOADING MINCULT EVENTS " + error_text)
+def log_loading_mincult_error(place_id, e):
+    print("ERROR LOADING MINCULT EVENTS", e)
+    fast_send_email(place_id, "ERROR LOADING MINCULT EVENTS " + str(e))
 
 
 def get_email_server():
