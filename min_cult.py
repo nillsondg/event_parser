@@ -168,10 +168,22 @@ def process_org(place_id):
 
 def get_evendate_org_id(place_id):
     return {
-        6201: 253
+        6201: 253,
+        8098: 254,
+        7748: 255,
+        9637: 256,
+        21299: 257
     }[place_id]
 
 
 def process_all():
     # Кусково
     process_org(6201)
+    # Эрмитаж
+    process_org(8098)
+    # Екатеринбургский музей изобразительных искусств
+    process_org(7748)
+    # Самарская государственная филармония
+    process_org(9637)
+    # Национальная художественная галерея «Хазинэ»
+    process_org(21299)
