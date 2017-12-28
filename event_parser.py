@@ -164,7 +164,7 @@ def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, u
         write_events_to_file(file_name, urls, exist_urls)
 
     except Exception as e:
-        log_error("file_name", e)
+        log_error(file_name, e)
     print("end check " + do_url)
 
 

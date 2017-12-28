@@ -117,7 +117,7 @@ def get_eventdesc_from_mincult(place_id, event_json):
         return img, filename
 
     img, filename = get_img(img_url)
-    detail_url_format = "https://all.culture.ru/api/2.2/events/{id}"
+    detail_url_format = "https://all.culture.ru/public/events/{id}"
     detail_url = detail_url_format.format(id=event_json["_id"])
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_evendate_dates(dates), "location": location,
@@ -130,8 +130,8 @@ def get_eventdesc_from_mincult(place_id, event_json):
 
 def prepare_msg_text(done_list, error_list, update_list):
     text = ""
-    for res_url, url in done_list:
-        text += "ADDED " + res_url + "\r\n"
+    for url in done_list:
+        text += "ADDED " + url + "\r\n"
     for url in error_list:
         text += "ERROR " + url + "\r\n"
     for url in update_list:
