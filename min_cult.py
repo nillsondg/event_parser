@@ -1,6 +1,5 @@
 import requests
 import json
-import codecs
 import time
 import datetime
 import mimetypes, base64
@@ -30,6 +29,7 @@ def write_url_to_file(place_id, mincult_id, evendate_id):
 
 
 def get_org_json(place_id):
+    print("getting events from mincult for", str(place_id))
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
     }
@@ -39,8 +39,7 @@ def get_org_json(place_id):
     r = requests.get(res_url)
     print(r.status_code, r.reason)
     if r.status_code == 200:
-        reader = codecs.getreader("utf-8")
-        events_json = json.load(reader(r.content))
+        events_json = json.loads(r.content.decode('utf-8'))
         return events_json
 
 
