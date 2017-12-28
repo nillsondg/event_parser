@@ -119,7 +119,7 @@ def parse_from_cinemapark():
                "image_horizontal": img,
                "filenames": {'horizontal': filename}}
 
-        res_url = event_creator.post_to_evendate(res)
+        res_url, event_id = event_creator.post_to_evendate(res)
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
             done_list.append((res_url, url))
@@ -127,7 +127,7 @@ def parse_from_cinemapark():
             error_list.append(url)
         time.sleep(2)
 
-    event_creator.send_email_for_org(server, "Cinemapark (CHANGE IMAGES)",
-                                     event_creator.prepare_msg_text(done_list, error_list))
+    parse_logger.send_email_for_org(server, "Cinemapark (CHANGE IMAGES)",
+                                    event_creator.prepare_msg_text(done_list, error_list))
     server.quit()
     print("end check " + do_url)

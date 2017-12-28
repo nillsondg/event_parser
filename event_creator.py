@@ -32,7 +32,7 @@ def __process(file_name, processor):
     server = parse_logger.get_email_server()
 
     for url in process_set:
-        res_url = post_to_evendate(processor(url))
+        res_url, event_id = post_to_evendate(processor(url))
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
             parse_logger.send_email(server, res_url, url)
@@ -64,7 +64,7 @@ def __process_bunch(file_name, org, processor):
 
     for url in process_set:
         try:
-            res_url = post_to_evendate(processor(url))
+            res_url, event_id = post_to_evendate(processor(url))
         except Exception as e:
             error_list.append(url)
             print("ERROR PARSING EVENT ", e)
