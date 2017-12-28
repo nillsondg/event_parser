@@ -1,10 +1,11 @@
 import requests
 import json
+import codecs
 import time
 import datetime
 import mimetypes, base64
 import event_creator
-from parse_logger import send_email_for_org, get_email_server
+from parse_logger import send_email_for_org, get_email_server, log_loading_mincult_error
 
 mincult_folder = "mincult_events/"
 
@@ -38,7 +39,8 @@ def get_org_json(place_id):
     r = requests.get(res_url)
     print(r.status_code, r.reason)
     if r.status_code == 200:
-        events_json = json.loads(r.content)
+        reader = codecs.getreader("utf-8")
+        events_json = json.loads(reader(r.content))
         return events_json
 
 
@@ -145,7 +147,12 @@ def process_org(place_id):
     update_list = list()
     # todo update
 
-    events_json = get_org_json(place_id)
+    try:
+        events_json = get_org_json(place_id)
+    except Exception as e:
+        log_loading_mincult_error(place_id, e)
+        return
+
     for event in events_json["events"]:
         event_desc = get_eventdesc_from_mincult(place_id, event)
         _id = event["_id"]
