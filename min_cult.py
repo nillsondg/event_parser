@@ -12,7 +12,7 @@ mincult_folder = "mincult_events/"
 def read_events_from_file(place_id):
     exist_ids = dict()
     try:
-        with open(mincult_folder + str(place_id)) as f:
+        with open(mincult_folder + str(place_id) + ".txt") as f:
             for line in f:
                 mincult_id = int(line.strip().split(' ')[1])
                 evendate_id = int(line.strip().split(' ')[2])
@@ -23,7 +23,7 @@ def read_events_from_file(place_id):
 
 
 def write_url_to_file(place_id, mincult_id, evendate_id):
-    f = open(mincult_folder + str(place_id), 'a+')
+    f = open(mincult_folder + str(place_id) + ".txt", 'a+')
     f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(mincult_id) + " " + str(evendate_id) + "\n")
     f.close()
 
