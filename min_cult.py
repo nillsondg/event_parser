@@ -40,7 +40,7 @@ def get_org_json(place_id):
     print(r.status_code, r.reason)
     if r.status_code == 200:
         reader = codecs.getreader("utf-8")
-        events_json = json.loads(reader(r.content))
+        events_json = json.load(reader(r.content))
         return events_json
 
 
