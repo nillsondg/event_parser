@@ -51,12 +51,13 @@ def parse_from_cinemapark():
     events = main.xpath('.//div[contains(@class, "afisha-item afisha-film") and @data-category="1"]')
 
     done_urls = parse_logger.read_completed_urls(file_name)
+    ignored_urls = parse_logger.read_ignored_urls()
     for event in events:
         url = event.xpath('.//a[@class="btn btn-block btn-default" or @class="btn btn-block btn-primary"]')[0].get(
             "href")
         if not url.startswith("http"):
             url = base_url + url
-        if url in done_urls:
+        if url in set(done_urls).add(set(ignored_urls)):
             continue
         hover_block = event.xpath('.//div[@class="poster-holder"]')[0]
         title = event.xpath('.//div[@class="film-title"]')[0].text.strip()
@@ -120,7 +121,7 @@ def parse_from_cinemapark():
 
         res_url, event_id = evendate_api.post_to_evendate(res)
         if res_url is not None:
-            parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
+            parse_logger.write_url_to_file(parse_logger.events_desc_folder, file_name, url)
             done_list.append((res_url, url))
         else:
             error_list.append(url)
