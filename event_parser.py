@@ -1,7 +1,7 @@
 from grab import Grab
 import datetime
 from parse_logger import read_checked_urls
-from parse_logger import log_catalog_error as log_error
+from parse_logger import log_catalog_error
 
 urls_folder = "events/"
 
@@ -22,54 +22,6 @@ def write_events_to_file(file_name, url_set, exist_url_set):
             f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + url + "\n")
             print("added " + url)
     f.close()
-
-
-def parse_from_skolkovo():
-    skolkovo_url = "https://school.skolkovo.ru/static/201412_rss_reader/index_banners_fullview_2016.php?lang=ru"
-    file_name = "skolkovo.txt"
-    base_url = ""
-
-    g = get_grab()
-    g.go(skolkovo_url)
-    print("check " + skolkovo_url)
-
-    events = g.xpath_list('.//a[@class="btn btn-large btn-info"]')
-
-    urls = set()
-    for event in events:
-        url = event.get("href")
-        if url.startswith("//"):
-            url = "https:" + url
-        urls.add(url)
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + skolkovo_url)
-
-
-# парсить евенты по ссылкам
-def parse_from_lumiere():
-    lumiere_url = "http://www.lumiere.ru/events/"
-    file_name = "lumiere.txt"
-    base_url = "http://www.lumiere.ru"
-
-    g = get_grab()
-    g.go(lumiere_url)
-    print("check " + lumiere_url)
-
-    main = g.doc.select('//div[@id="expo_wide"]').node()
-    events = main.xpath('.//a[@href]')
-
-    urls = set()
-    for event in events:
-        url = event.get("href")
-        if not url.startswith("http"):
-            url = base_url + url
-        urls.add(url)
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + lumiere_url)
 
 
 def parse_from_garage():
@@ -164,7 +116,7 @@ def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, u
         write_events_to_file(file_name, urls, exist_urls)
 
     except Exception as e:
-        log_error(file_name, e)
+        log_catalog_error(file_name, e)
     print("end check " + do_url)
 
 
@@ -329,28 +281,15 @@ def parse_from_ditelegraph():
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
-# def parse_from_vishka():
-#     file_name = "vishka.txt"
-#     do_url = "https://www.hse.ru/news/announcements"
-#     base_url = "https://www.hse.ru"
-#     main_pattern = '//div[@class="content__inner"]'
-#     events_pattern = './/div[@class="b-events__item js-events-item" and not(contains(@data-filter, "private"))]'
-#
-#     def url_getter(event):
-#         return event.xpath('.//a')[0].get('href')
-#
-#     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
-
-
 def parse_all():
     try:
         parse_from_strelka()
     except Exception as e:
-        log_error("strelka", e)
+        log_catalog_error("strelka", e)
     try:
         parse_from_garage()
     except Exception as e:
-        log_error("garage", e)
+        log_catalog_error("garage", e)
 
     parse_from_planetarium()
     parse_from_digit_october()

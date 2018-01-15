@@ -49,27 +49,27 @@ def read_ignored_urls():
 
 def log_catalog_error(org, e):
     print("ERROR PARSING CATALOG", e)
-    fast_send_email(org, "ERROR PARSING CATALOG " + str(e))
+    fast_send_email("Error parsing catalog for " + org, "ERROR PARSING CATALOG " + str(e))
 
 
-def log_event_parsing_error(org, e):
+def log_event_parsing_error(url, e):
     print("ERROR PARSING EVENT", e)
-    fast_send_email(org, "ERROR PARSING EVENT " + str(e))
+    fast_send_email("Error parsing " + url, "ERROR PARSING EVENT " + str(e))
 
 
 def log_posting_error(url, error_text):
     print("ERROR POSTING EVENT", error_text)
-    # fast_send_email(url, "ERROR POSTING EVENT " + error_text)
+    fast_send_email("Error posting " + url, "ERROR POSTING EVENT " + error_text)
 
 
 def log_posting_org_error(url, error_text):
     print("ERROR POSTING ORG", error_text)
-    fast_send_email(url, "ERROR POSTING ORG " + error_text)
+    fast_send_email("Error posing org " + url, "ERROR POSTING ORG " + error_text)
 
 
 def log_loading_mincult_error(place_id, e):
     print("ERROR LOADING MINCULT EVENTS", e)
-    fast_send_email(str(place_id), "ERROR LOADING MINCULT EVENTS " + str(e))
+    fast_send_email("Error loading mincult org " + str(place_id), "ERROR LOADING MINCULT EVENTS " + str(e))
 
 
 def get_email_server():
@@ -81,25 +81,11 @@ def get_email_server():
     return server
 
 
-def send_email(server, for_url, from_url):
-    from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN
-    to_addr = 'Mr. Poster <%s>' % config.TRELLO_EMAIL
-    subj = 'New event'
-    msg_txt = 'Change image for: ' + for_url + " from: " + from_url + ""
-
-    msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_txt)
-    server.sendmail(from_addr, to_addr, msg)
+def fast_send_email(header, msg):
+    send_email(get_email_server(), header, msg)
 
 
-def fast_send_email(org, msg_text):
-    send_email_for_org(get_email_server(), "New event for " + org, msg_text)
-
-
-def fast_send_org_email(org, msg_text):
-    send_email_for_org(get_email_server(), "Org " + org, msg_text)
-
-
-def send_email_for_org(server, header, msg_text):
+def send_email(server, header, msg_text):
     if msg_text == "":
         return
     from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN

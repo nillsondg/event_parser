@@ -31,7 +31,7 @@ def __process_bunch(file_name, org, processor):
             res_url, event_id = post_to_evendate(processor(url))
         except Exception as e:
             error_list.append(url)
-            parse_logger.log_event_parsing_error(org, e)
+            parse_logger.log_event_parsing_error(url, e)
             continue
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folder, file_name, url)
