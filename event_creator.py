@@ -57,7 +57,6 @@ def __process_bunch(file_name, org, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     process_set = checked_urls.difference(done_urls)
-    server = parse_logger.get_email_server()
 
     done_list = []
     error_list = []
@@ -76,6 +75,7 @@ def __process_bunch(file_name, org, processor):
             error_list.append(url)
         time.sleep(10)
 
+    server = parse_logger.get_email_server()
     parse_logger.send_email_for_org(server, org, prepare_msg_text(done_list, error_list))
     server.quit()
 

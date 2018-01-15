@@ -197,6 +197,3 @@ def process_all():
     process_org(9637)
     # Национальная художественная галерея «Хазинэ»
     process_org(21299)
-
-
-process_org(6201)
