@@ -1,6 +1,7 @@
 import datetime
 import smtplib
 import config
+from transliterate import translit
 
 events_folder = "events/"
 events_desc_folders = "events_desc/"
@@ -43,7 +44,12 @@ def log_event_error(org, e):
 
 def log_posting_error(url, error_text):
     print("ERROR POSTING EVENT", error_text)
-    fast_send_email(url, "ERROR POSTING EVENT " + error_text)
+    # fast_send_email(url, "ERROR POSTING EVENT " + error_text)
+
+
+def log_posting_org_error(url, error_text):
+    print("ERROR POSTING ORG", error_text)
+    fast_send_email(url, "ERROR POSTING ORG " + error_text)
 
 
 def log_loading_mincult_error(place_id, e):
@@ -71,15 +77,18 @@ def send_email(server, for_url, from_url):
 
 
 def fast_send_email(org, msg_text):
-    send_email_for_org(get_email_server(), org, msg_text)
+    send_email_for_org(get_email_server(), "New event for " + org, msg_text)
 
 
-def send_email_for_org(server, org, msg_text):
+def fast_send_org_email(org, msg_text):
+    send_email_for_org(get_email_server(), "Org " + org, msg_text)
+
+
+def send_email_for_org(server, header, msg_text):
     if msg_text == "":
         return
     from_addr = 'Mr. Parser <%s>' % config.EMAIL_LOGIN
     to_addr = 'Mr. Poster <%s>' % config.TRELLO_EMAIL
-    subj = 'New events for ' + org
-
+    subj = header
     msg = "From: %s\nTo: %s\nSubject: %s\n\n%s" % (from_addr, to_addr, subj, msg_text)
-    server.sendmail(from_addr, to_addr, msg)
+    server.sendmail(from_addr, to_addr, translit(msg, 'ru', reversed=True))

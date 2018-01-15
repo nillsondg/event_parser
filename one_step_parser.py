@@ -5,6 +5,7 @@ import requests, mimetypes, base64
 import event_desc_parser as parser
 import time
 import parse_logger
+import evendate_api
 import event_creator
 from bs4 import BeautifulSoup
 from lxml.etree import tostring
@@ -35,8 +36,6 @@ def parse_from_cinemapark():
     do_url = "http://www.cinemapark.ru/"
     base_url = "http://www.cinemapark.ru"
     org_id = 13
-
-    server = parse_logger.get_email_server()
 
     done_list = []
     error_list = []
@@ -119,7 +118,7 @@ def parse_from_cinemapark():
                "image_horizontal": img,
                "filenames": {'horizontal': filename}}
 
-        res_url, event_id = event_creator.post_to_evendate(res)
+        res_url, event_id = evendate_api.post_to_evendate(res)
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folders, file_name, url)
             done_list.append((res_url, url))
@@ -127,7 +126,5 @@ def parse_from_cinemapark():
             error_list.append(url)
         time.sleep(2)
 
-    parse_logger.send_email_for_org(server, "Cinemapark (CHANGE IMAGES)",
-                                    event_creator.prepare_msg_text(done_list, error_list))
-    server.quit()
+    parse_logger.fast_send_email("Cinemapark (CHANGE IMAGES)", event_creator.prepare_msg_text(done_list, error_list))
     print("end check " + do_url)

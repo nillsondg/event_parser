@@ -3,8 +3,9 @@ import json
 import time
 import datetime
 import mimetypes, base64
-import event_creator
-from parse_logger import send_email_for_org, get_email_server, log_loading_mincult_error
+import evendate_api
+from parse_logger import fast_send_email, log_loading_mincult_error
+from bs4 import BeautifulSoup
 
 mincult_folder = "mincult_events/"
 
@@ -95,12 +96,9 @@ def get_eventdesc_from_mincult(place_id, event_json):
             new_dates.append(date)
         return new_dates
 
-    import re
-
     def cleanhtml(raw_html):
-        cleanr = re.compile('<.*?>')
-        cleantext = re.sub(cleanr, ' ', raw_html)
-        return cleantext
+        soup = BeautifulSoup(raw_html, "lxml")
+        return soup.get_text()
 
     def prepare_desc(desc):
         desc = cleanhtml(desc)
@@ -166,14 +164,14 @@ def process_org(place_id):
         event_desc = get_eventdesc_from_mincult(place_id, event)
         _id = event["_id"]
         if _id not in done_events.keys():
-            evendate_url, evendate_id = event_creator.post_to_evendate(event_desc)
+            evendate_url, evendate_id = evendate_api.post_to_evendate(event_desc)
             if evendate_url is not None:
                 write_url_to_file(place_id, _id, evendate_id)
                 done_list.append(evendate_url)
             else:
                 error_list.append("place_id: {}, _id: {}".format(place_id, _id))
 
-    send_email_for_org(get_email_server(), str(place_id), prepare_msg_text(done_list, error_list, update_list))
+    fast_send_email(str(place_id), prepare_msg_text(done_list, error_list, update_list))
 
 
 def get_evendate_org_id(place_id):

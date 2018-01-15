@@ -1,28 +1,7 @@
-import requests
 import event_desc_parser
-import json
 import parse_logger
 import time
-import config
-
-
-def post_to_evendate(event_desc):
-    print("posting " + event_desc['detail_info_url'])
-    headers = {'Authorization': config.AUTH_TOKEN}
-    r = requests.post("https://evendate.io/api/v1/events/", data=json.dumps(event_desc), headers=headers)
-    print(r.status_code, r.reason)
-    if r.status_code == 200:
-        event = json.loads(r.text)["data"]
-        evendate_url = format_evendate_event_url(event["event_id"])
-        print("POSTED " + evendate_url)
-        return evendate_url, event["event_id"]
-    else:
-        parse_logger.log_posting_error(event_desc['detail_info_url'], r.text)
-        return None, None
-
-
-def format_evendate_event_url(event_id):
-    return "https://evendate.io/event/" + str(event_id)
+from evendate_api import post_to_evendate
 
 
 def __process(file_name, processor):
@@ -42,6 +21,10 @@ def __process(file_name, processor):
         time.sleep(10)
 
     server.quit()
+
+
+def prepare_msg_header(org, done_list, all_list):
+    return "New events for {} +{}/-{}".format(org, len(done_list), len(all_list))
 
 
 def prepare_msg_text(done_list, error_list):
@@ -76,7 +59,8 @@ def __process_bunch(file_name, org, processor):
         time.sleep(10)
 
     server = parse_logger.get_email_server()
-    parse_logger.send_email_for_org(server, org, prepare_msg_text(done_list, error_list))
+    msg_header = prepare_msg_header(org, done_list, process_set)
+    parse_logger.send_email_for_org(server, msg_header, prepare_msg_text(done_list, error_list))
     server.quit()
 
 
