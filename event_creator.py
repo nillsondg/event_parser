@@ -21,12 +21,12 @@ def __process_bunch(file_name, org, processor):
     checked_urls = parse_logger.read_checked_urls(file_name)
     done_urls = parse_logger.read_completed_urls(file_name)
     ignored_urls = parse_logger.read_ignored_urls()
-    process_set = checked_urls.difference(done_urls)
+    process_set = checked_urls.difference(done_urls).difference(ignored_urls)
 
     done_list = []
     error_list = []
 
-    for url in set(process_set) - set(ignored_urls):
+    for url in process_set:
         try:
             res_url, event_id = post_to_evendate(processor(url))
         except Exception as e:
@@ -42,7 +42,7 @@ def __process_bunch(file_name, org, processor):
 
     server = parse_logger.get_email_server()
     msg_header = prepare_msg_header(org, done_list, process_set)
-    parse_logger.send_email_for_org(server, msg_header, prepare_msg_text(done_list, error_list))
+    parse_logger.send_email(server, msg_header, prepare_msg_text(done_list, error_list))
     server.quit()
 
 

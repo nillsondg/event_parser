@@ -57,7 +57,7 @@ def parse_from_cinemapark():
             "href")
         if not url.startswith("http"):
             url = base_url + url
-        if url in set(done_urls).add(set(ignored_urls)):
+        if url in set(done_urls).update(set(ignored_urls)):
             continue
         hover_block = event.xpath('.//div[@class="poster-holder"]')[0]
         title = event.xpath('.//div[@class="film-title"]')[0].text.strip()
