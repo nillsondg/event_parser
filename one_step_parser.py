@@ -52,12 +52,14 @@ def parse_from_cinemapark():
 
     done_urls = parse_logger.read_completed_urls(file_name)
     ignored_urls = parse_logger.read_ignored_urls()
+    process_set = done_urls.difference(ignored_urls)
     for event in events:
         url = event.xpath('.//a[@class="btn btn-block btn-default" or @class="btn btn-block btn-primary"]')[0].get(
             "href")
         if not url.startswith("http"):
             url = base_url + url
-        if url in set(done_urls).update(set(ignored_urls)):
+
+        if url in process_set:
             continue
         hover_block = event.xpath('.//div[@class="poster-holder"]')[0]
         title = event.xpath('.//div[@class="film-title"]')[0].text.strip()
@@ -68,9 +70,9 @@ def parse_from_cinemapark():
         tags.extend(formats)
 
         # 'В прокате  с 30 ноября по 13 декабря'
-        data_raw = hover_block.xpath('.//br')[3].tail.strip().lower()
+        date_raw = hover_block.xpath('.//br')[3].tail.strip().lower()
         date_pattern = re.compile("с (\d{1,2}) ([А-Яа-я]*) по (\d{1,2}) ([А-Яа-я]*)")
-        match = date_pattern.search(data_raw)
+        match = date_pattern.search(date_raw)
 
         if match:
             start_day = int(match.group(1))
@@ -89,8 +91,7 @@ def parse_from_cinemapark():
                 end_date = date.replace(hour=23, minute=59) + datetime.timedelta(day)
                 dates.append((start_date, end_date))
         else:
-            # todo
-            pass
+            raise ValueError("Can't parse date " + date_raw)
 
         def get_description(film_url):
             time.sleep(5)

@@ -112,6 +112,3 @@ def process_all():
     process_centermars()
     process_mail()
     process_ditelegraph()
-
-
-process_strelka()

@@ -29,6 +29,12 @@ def prepare_date(dates):
     return new_dates
 
 
+def prepare_title(title):
+    if len(title) > 150:
+        return title[:150]
+    return title
+
+
 def prepare_desc(desc):
     if len(desc) > 2000:
         return desc[:2000]
@@ -326,8 +332,7 @@ def parse_desc_from_tretyako(url):
 
         datetime_str = date_str + " " + str(year) + " " + time_raw
     else:
-        # todo
-        pass
+        raise ValueError("Can't parse date")
 
     date = datetime.datetime.strptime(datetime_str, "%d %m %Y %H:%M")
     end_date = date + datetime.timedelta(hours=2)
@@ -366,7 +371,7 @@ def parse_desc_from_tretyako(url):
     except IndexError:
         img, filename = get_default_img("tretyako.jpg", "jpg")
 
-    res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
+    res = {"organization_id": org_id, "title": prepare_title(title), "dates": prepare_date(dates),
            "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -386,7 +391,7 @@ def parse_garage_dates(date_raw, time_raw):
     # По субботам, 13:00–15:00
 
     day_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{4})')
-    many_days_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{0,4})\s*–\s*(\d{1,2}) ([А-Яа-я]*) (\d{4})')
+    many_days_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*(\d{0,4})?\s*–\s*(\d{1,2}) ([А-Яа-я]*) (\d{4})')
     time_pattern = re.compile('(\d\d):(\d\d)–?(\d\d)?:?(\d\d)?')
 
     one_day_match = day_pattern.match(date_raw)
@@ -396,14 +401,14 @@ def parse_garage_dates(date_raw, time_raw):
     if many_days_match and time_match:
         month1 = many_days_match.group(2)
         month2 = many_days_match.group(5)
-        date_str = date_raw.replace(month1, str(month_to_num(month1)))
-        date_str = date_str.replace(month2, str(month_to_num(month2)))
+        if month1 is "":
+            month1 = month2
 
         first_day = many_days_match.group(1)
         last_day = many_days_match.group(4)
         year1 = many_days_match.group(3)
         year2 = many_days_match.group(6)
-        if year1 == "":
+        if year1 is "":
             year1 = year2
 
         first_date = datetime.datetime.strptime(str(first_day) + " " + str(month_to_num(month1)) + " " + year1,
@@ -444,12 +449,14 @@ def parse_garage_dates(date_raw, time_raw):
             end_hours = int(end_hours)
             end_minutes = int(end_minutes)
         else:
-            end_hours, end_minutes = int(start_hours) + 2, start_minutes
+            end_hours, end_minutes = int(start_hours) + 2, int(start_minutes)
             if end_hours > 23:
                 end_hours = 23
                 end_minutes = 59
         end_date = date.replace(day=date.day, hour=end_hours, minute=end_minutes)
         return [(date, end_date)]
+    else:
+        raise ValueError("Can't parse date " + date_raw + " or time " + time_raw)
 
 
 def __parse_event_desc_from_garage(url):
@@ -599,7 +606,10 @@ def parse_desc_from_yandex(url):
     header_info_block = g.doc.select('//div[@class="event-header__info"]').node()
 
     datetime_raw = header_info_block.xpath('.//div[contains(@class, "event-header__when")]')[0].text.strip().lower()
-    city = header_info_block.xpath('.//div[contains(@class, "event-header__place")]')[0].text.strip()
+    try:
+        city = header_info_block.xpath('.//div[contains(@class, "event-header__place")]')[0].text.strip()
+    except IndexError:
+        city = "Москва"
 
     # 5 ДЕКАБРЯ, 18:30
     # ДЕКАБРЬ
@@ -642,8 +652,7 @@ def parse_desc_from_yandex(url):
             end_date = date.replace(hour=23, minute=59) + datetime.timedelta(day)
             dates.append((start_date, end_date))
     else:
-        pass
-        # todo
+        raise ValueError("Can't parse date " + datetime_raw)
 
     description_block = g.doc.select('//div[contains(@class, "event-description")]').node()
     texts = description_block.xpath('.//p')
@@ -652,8 +661,11 @@ def parse_desc_from_yandex(url):
         if text_elem.text is not None:
             description += BeautifulSoup(tostring(text_elem), "lxml").text
 
-    map_block = g.doc.select('//div[@class="event-place__place-title"]').node()
-    map_text = city + ", " + map_block.text
+    try:
+        map_block = g.doc.select('//div[@class="event-place__place-title"]').node()
+        map_text = city + ", " + map_block.text
+    except IndexError:
+        map_text = city
 
     price = 0
 
@@ -689,7 +701,7 @@ def parse_desc_from_flacon(url):
         date_block = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[0]
         date_raw = date_block.text.strip().lower()
         time_raw = date_block.xpath('.//br')[0].tail.strip()
-    except:
+    except IndexError:
         date_block = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[2]
         date_raw = date_block.text.strip().lower()
         time_raw = date_block.xpath('.//br')[0].tail.strip()
@@ -725,18 +737,11 @@ def parse_desc_from_flacon(url):
         start_hours, start_minutes = 0, 0
         end_hours, end_minutes = 23, 59
 
-    one_day_pattern = re.compile('(\d{1,2}) ([А-Яа-я]*) (\d{4})')
+    one_day_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)\s*(\d{4})?')
     interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*[—–]\s*(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
     match = one_day_pattern.match(date_raw)
     interval_match = interval_pattern.match(date_raw)
-    if match:
-        month = int(month_to_num(match.group(2)))
-        day = int(match.group(1))
-        year = int(match.group(3))
-        date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
-        end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
-        dates = [(date, end_date)]
-    elif interval_match:
+    if interval_match:
         start_month = interval_match.group(2)
         end_month = month_to_num(interval_match.group(4))
         if start_month:
@@ -760,9 +765,19 @@ def parse_desc_from_flacon(url):
             start_date = date + datetime.timedelta(day)
             end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
             dates.append((start_date, end_date))
+    elif match:
+        month = int(month_to_num(match.group(2)))
+        day = int(match.group(1))
+        year = match.group(3)
+        if year:
+            year = int(year)
+        else:
+            year = datetime.datetime.today().year
+        date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
+        end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
+        dates = [(date, end_date)]
     else:
-        # todo
-        pass
+        raise ValueError("Can't parse date " + date_raw)
 
     description_block = \
         g.doc.select('//section[contains(@class, "about-section_wrap")]').node().xpath('.//div[@class="col-md-6"]')[0]
@@ -887,15 +902,22 @@ def parse_desc_from_vinzavod(url):
         end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
         dates = [(date, end_date)]
     else:
-        # todo
-        pass
+        raise ValueError("Can't parse date " + date_raw)
 
     description_block = g.doc.select('//div[contains(@class, "exhibition-detail-info__right")]').node()
 
-    texts = description_block.xpath('.//p | .//ul')
-    description = ""
-    for text_elem in texts:
-        description += BeautifulSoup(tostring(text_elem), "lxml").text
+    def parse_description():
+        texts = description_block.xpath('.//p | .//ul')
+        desc = ""
+        for text_elem in texts:
+            desc += BeautifulSoup(tostring(text_elem), "lxml").text
+        return desc
+
+    description = parse_description()
+    if description is "":
+        description_block = g.doc.select(
+            '//div[contains(@class, "place-description exhibition-detail__description--archive")]').node()
+        description = parse_description()
 
     map_text = "Москва, 4-й Сыромятнический переулок, 1/8 "
 
@@ -998,8 +1020,7 @@ def parse_desc_from_gorky_park(url):
         end_date = datetime.datetime(year=year, month=month, day=day, hour=end_hours, minute=end_minutes)
         dates = [(date, end_date)]
     else:
-        # todo
-        pass
+        raise ValueError("Can't parse date " + datetime_raw)
 
     description = ""
     try:
@@ -1078,6 +1099,8 @@ def parse_desc_from_artplay(url):
             start_date = date + datetime.timedelta(day)
             end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
             dates.append((start_date, end_date))
+    else:
+        raise ValueError("Can't parse date " + datetime_raw)
 
     description = ""
     try:
