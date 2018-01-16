@@ -4,8 +4,8 @@ import time
 from evendate_api import post_to_evendate
 
 
-def prepare_msg_header(org, done_list, all_list):
-    return "New events for {} +{}/-{}".format(org, len(done_list), len(all_list))
+def prepare_msg_header(org, done_list, error_list):
+    return "New events for {} +{}/-{}".format(org, len(done_list), len(error_list))
 
 
 def prepare_msg_text(done_list, error_list):
@@ -27,6 +27,7 @@ def __process_bunch(file_name, org, processor):
     error_list = []
 
     for url in process_set:
+        print("processing {}/{}".format(len(done_urls) + 1, len(process_set)))
         try:
             res_url, event_id = post_to_evendate(processor(url))
         except Exception as e:
@@ -41,7 +42,7 @@ def __process_bunch(file_name, org, processor):
         time.sleep(10)
 
     server = parse_logger.get_email_server()
-    msg_header = prepare_msg_header(org, done_list, process_set)
+    msg_header = prepare_msg_header(org, done_list, error_list)
     parse_logger.send_email(server, msg_header, prepare_msg_text(done_list, error_list))
     server.quit()
 

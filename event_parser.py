@@ -24,37 +24,6 @@ def write_events_to_file(file_name, url_set, exist_url_set):
     f.close()
 
 
-def parse_from_garage():
-    garage_url = "https://garagemca.org/ru/calendar"
-    file_name = "garage.txt"
-    base_url = "https://garagemca.org"
-
-    g = get_grab()
-    g.go(garage_url)
-    print("check " + garage_url)
-
-    main = g.doc.select('//div[@class="calendar-events__container"]').node()
-    events = main.xpath('.//div[@class="calendar-event"]')
-    main_exb = g.doc.select('//div[@class="calendar-exhibitions"]').node()
-    exhibitions = main_exb.xpath('.//div[@class="calendar-event is-white"]')
-
-    urls = set()
-    for event in events:
-        url = event.xpath('.//a[@class="calendar-event__image"]')[0].get("href")
-        if not url.startswith("https"):
-            url = base_url + url
-        urls.add(url)
-    for exhibition in exhibitions:
-        url = exhibition.xpath('.//a[contains(@class, "calendar-event__image")]')[0].get("href")
-        if not url.startswith("https"):
-            url = base_url + url
-        urls.add(url)
-
-    exist_urls = read_checked_urls(file_name=file_name)
-    write_events_to_file(file_name, urls, exist_urls)
-    print("end check " + base_url)
-
-
 def parse_from_strelka():
     file_name = "strelka.txt"
     strelka_url = "http://strelka.com/ru/events"
@@ -118,6 +87,32 @@ def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, u
     except Exception as e:
         log_catalog_error(file_name, e)
     print("end check " + do_url)
+
+
+def parse_from_garage():
+    do_url = "https://garagemca.org/ru/calendar"
+    file_name = "garage.txt"
+    base_url = "https://garagemca.org"
+
+    main_pattern = '//div[@class="calendar-events__container"]'
+    events_pattern = './/div[@class="calendar-event"]'
+    main_exb_pattern = '//div[@class="calendar-exhibitions"]'
+    exhibitions_pattern = './/div[@class="calendar-event is-white"]'
+
+    def url_getter(event):
+        url = event.xpath('.//a[@class="calendar-event__image"]')[0].get("href")
+        if not url.startswith("https"):
+            url = base_url + url
+        return url
+
+    def url_exh_getter(exhibition):
+        url = exhibition.xpath('.//a[contains(@class, "calendar-event__image")]')[0].get("href")
+        if not url.startswith("https"):
+            url = base_url + url
+        return url
+
+    parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
+    parse_from_site(file_name, do_url, base_url, main_exb_pattern, exhibitions_pattern, url_exh_getter)
 
 
 def parse_from_digit_october():
@@ -286,11 +281,8 @@ def parse_all():
         parse_from_strelka()
     except Exception as e:
         log_catalog_error("strelka", e)
-    try:
-        parse_from_garage()
-    except Exception as e:
-        log_catalog_error("garage", e)
 
+    parse_from_garage()
     parse_from_planetarium()
     parse_from_digit_october()
     parse_from_tretyako()
