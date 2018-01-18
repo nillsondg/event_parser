@@ -4,7 +4,7 @@ import time
 import datetime
 import mimetypes, base64
 import evendate_api
-from parse_logger import fast_send_email, log_loading_mincult_error
+from parse_logger import fast_send_email, log_loading_mincult_error, read_ors_from_file
 from bs4 import BeautifulSoup
 
 mincult_folder = "mincult_events/"
@@ -44,8 +44,7 @@ def get_org_json(place_id):
         return events_json
 
 
-def get_eventdesc_from_mincult(place_id, event_json):
-    org_id = get_evendate_org_id(place_id)
+def get_eventdesc_from_mincult(place_id, org_id, event_json):
     title = event_json["name"]
     description = event_json["description"]
     is_free = event_json["isFree"]
@@ -67,7 +66,10 @@ def get_eventdesc_from_mincult(place_id, event_json):
         region = place["region"]["name"]
         city = place["city"]["type"] + " " + place["city"]["name"]
         street = place["street"]["type"] + " " + place["street"]["name"]
-        house = place["house"]["type"] + " " + place["house"]["name"]
+        try:
+            house = place["house"]["type"] + place["house"]["name"]
+        except KeyError:
+            house = place["house"]["name"]
 
         return "{}, {}, {}, {}".format(region, city, street, house)
 
@@ -147,7 +149,7 @@ def prepare_msg_text(done_list, error_list, update_list):
     return text
 
 
-def process_org(place_id):
+def process_org(place_id, org_id):
     done_events = read_events_from_file(place_id)
     error_list = list()
     done_list = list()
@@ -161,7 +163,7 @@ def process_org(place_id):
         return
 
     for event in events_json["events"]:
-        event_desc = get_eventdesc_from_mincult(place_id, event)
+        event_desc = get_eventdesc_from_mincult(place_id, org_id, event)
         _id = event["_id"]
         if _id not in done_events.keys():
             evendate_url, evendate_id = evendate_api.post_to_evendate(event_desc)
@@ -174,24 +176,7 @@ def process_org(place_id):
     fast_send_email(str(place_id), prepare_msg_text(done_list, error_list, update_list))
 
 
-def get_evendate_org_id(place_id):
-    return {
-        6201: 253,
-        8098: 254,
-        7748: 255,
-        9637: 256,
-        21299: 257
-    }[place_id]
-
-
 def process_all():
-    # Кусково
-    process_org(6201)
-    # Эрмитаж
-    process_org(8098)
-    # Екатеринбургский музей изобразительных искусств
-    process_org(7748)
-    # Самарская государственная филармония
-    process_org(9637)
-    # Национальная художественная галерея «Хазинэ»
-    process_org(21299)
+    exist_orgs = read_ors_from_file()
+    for min_id, even_id in exist_orgs.items():
+        process_org(min_id, even_id)

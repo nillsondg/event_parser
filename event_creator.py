@@ -27,7 +27,7 @@ def __process_bunch(file_name, org, processor):
     error_list = []
 
     for url in process_set:
-        print("processing {}/{}".format(len(done_urls) + 1, len(process_set)))
+        print("processing {}/{}".format(len(process_set) - len(process_set.difference(done_urls)), len(process_set)))
         try:
             res_url, event_id = post_to_evendate(processor(url))
         except Exception as e:

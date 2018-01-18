@@ -6,6 +6,7 @@ import mimetypes
 import base64
 from bs4 import BeautifulSoup
 from evendate_api import post_org_to_evendate
+import datetime
 
 
 def get_org_from_mincult(place_id):
@@ -150,5 +151,20 @@ def prepare_org(org_desc):
            }
     return org
 
+
+def write_orgs_to_file(org_dict, exist_org_dict):
+    file_name = "orgs.txt"
+    f = open(file_name, 'a+')
+    for min_id, even_id in org_dict.items():
+        if min_id not in exist_org_dict.keys():
+            f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + min_id + " " + even_id + "\n")
+            print("added " + min_id)
+    f.close()
+
+
 # todo create in cycle and post result
-# post_org_to_evendate(prepare_org(get_org_from_mincult(9757)["place"]))
+def add_org(place_id):
+    exist_orgs = parse_logger.read_ors_from_file()
+    evendate_url, evendate_id = post_org_to_evendate(prepare_org(get_org_from_mincult(place_id)["place"]))
+    if evendate_url is not None:
+        write_orgs_to_file({place_id: evendate_id}, exist_orgs)

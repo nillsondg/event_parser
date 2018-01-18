@@ -47,6 +47,19 @@ def read_ignored_urls():
     return __read_urls_from_file(events_desc_folder, "_ignore.txt")
 
 
+def read_ors_from_file():
+    exist_orgs = dict()
+    file_name = "orgs.txt"
+    try:
+        with open(file_name) as f:
+            for line in f:
+                date, min_id, even_id = line.strip().split(' ')
+                exist_orgs[min_id] = even_id
+    except IOError:
+        pass
+    return exist_orgs
+
+
 def log_catalog_error(org, e):
     print("ERROR PARSING CATALOG", e)
     fast_send_email("Error parsing catalog for " + org, "ERROR PARSING CATALOG " + str(e))
