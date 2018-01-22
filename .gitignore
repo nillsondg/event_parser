@@ -7,3 +7,4 @@ mincult_events
 *.pem
 out.html
 orgs.txt
+.DS_Store
