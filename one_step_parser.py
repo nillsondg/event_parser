@@ -40,7 +40,7 @@ def find_img_in_tmdb(title):
     try:
         movie = search.results[0]
     except IndexError:
-        return None
+        return None, None
     return prepare_cropped_img(crop_img(load_img(get_tmdb_img_url(movie['poster_path']))), "png")
 
 
