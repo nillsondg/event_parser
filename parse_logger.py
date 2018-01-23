@@ -80,6 +80,12 @@ def log_posting_org_error(url, error_text):
     fast_send_email("Error posing org " + url, "ERROR POSTING ORG " + error_text)
 
 
+def log_getting_event_stats_error(event_id, error_text):
+    print("ERROR GETTING STATS ", error_text)
+    fast_send_email("Error getting stats for event " + event_id, "ERROR GETTING STATS " + error_text)
+
+
+
 def log_loading_mincult_error(place_id, e):
     print("ERROR LOADING MINCULT EVENTS", e)
     fast_send_email("Error loading mincult org " + str(place_id), "ERROR LOADING MINCULT EVENTS " + str(e))

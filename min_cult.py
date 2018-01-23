@@ -1,11 +1,13 @@
 import requests
-import json
-import time
 import datetime
 import mimetypes, base64
 import evendate_api
 from parse_logger import fast_send_email, log_loading_mincult_error, read_ors_from_file
 from bs4 import BeautifulSoup
+from mincult_api import get_org_json, post_stats
+from evendate_api import format_evendate_event_url
+import time
+from utils import crop_img_to_16x9
 
 mincult_folder = "mincult_events/"
 
@@ -27,21 +29,6 @@ def write_url_to_file(place_id, mincult_id, evendate_id):
     f = open(mincult_folder + str(place_id) + ".txt", 'a+')
     f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(mincult_id) + " " + str(evendate_id) + "\n")
     f.close()
-
-
-def get_org_json(place_id):
-    print("getting events from mincult for", str(place_id))
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
-    }
-    url = "https://all.culture.ru/api/2.3/events?places={place_id}&status=accepted&start={start_timestamp}"
-
-    res_url = url.format(place_id=place_id, start_timestamp=int(time.time()), headers=headers)
-    r = requests.get(res_url)
-    print(r.status_code, r.reason)
-    if r.status_code == 200:
-        events_json = json.loads(r.content.decode('utf-8'))
-        return events_json
 
 
 def get_eventdesc_from_mincult(place_id, org_id, event_json):
@@ -116,12 +103,13 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
         return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     def get_img(url):
-        img_raw = requests.get(url, allow_redirects=True)
-        content_type = img_raw.headers['content-type']
+        res = requests.get(url, allow_redirects=True)
+        content_type = res.headers['content-type']
         extension = mimetypes.guess_extension(content_type)
         if extension == ".jpe":
             extension = ".jpeg"
-        img = "data:{};base64,".format(content_type) + base64.b64encode(img_raw.content).decode("utf-8")
+        img = "data:{};base64,".format(content_type) + base64.b64encode(crop_img_to_16x9(res.content)) \
+            .decode("utf-8")
         filename = "image" + extension
         return img, filename
 
@@ -166,7 +154,7 @@ def process_org(place_id, org_id):
         event_desc = get_eventdesc_from_mincult(place_id, org_id, event)
         _id = event["_id"]
         if _id not in done_events.keys():
-            evendate_url, evendate_id = evendate_api.post_to_evendate(event_desc)
+            evendate_url, evendate_id = evendate_api.post_event_to_evendate(event_desc)
             if evendate_url is not None:
                 write_url_to_file(place_id, _id, evendate_id)
                 done_list.append(evendate_url)
@@ -179,4 +167,49 @@ def process_org(place_id, org_id):
 def process_all():
     exist_orgs = read_ors_from_file()
     for min_id, even_id in exist_orgs.items():
+        sync_stats(min_id, even_id)
         process_org(min_id, even_id)
+
+
+def sync_stats(place_id, org_id):
+    done_events = read_events_from_file(place_id)
+    error_list = list()
+    done_list = list()
+
+    for mincult_id, evendate_id in done_events.items():
+        event_stats = evendate_api.get_stats(evendate_id)
+        prepared_stats = prepare_stats(mincult_id, evendate_id, event_stats)
+        res = post_stats(prepared_stats)
+        if res is not None:
+            # todo temp
+            print(res)
+            print("synced stats for event mincult_id: {}, evendate_id: {}".format(mincult_id, evendate_id))
+            done_list.append(evendate_api.format_evendate_event_url(evendate_id))
+        else:
+            error_list.append(
+                "Error posting stats to mincult for mincult_id {}, evendate_id: {}".format(mincult_id, evendate_id))
+
+    print("Synced stats for {}, error with {}".format(len(done_list), len(error_list)))
+    # fast_send_email(str(place_id), prepare_msg_text(done_list, error_list, update_list))
+
+
+def prepare_stats(min_event_id, event_id, evendate_stats_json):
+    # evendate format
+    # "{'fave': [{'value': 0, 'time_value': 1516725004}], 'view_detail': [{'value': 9, 'time_value': 1516725004}]}"
+    time_now = int(round(time.time() * 1000))
+    min_stats = {
+        "items": [
+            {
+                "entity": {
+                    "_id": min_event_id,
+                    "type": "events"
+                },
+                "views": evendate_stats_json["view_detail"][0]["value"],
+                "likes": evendate_stats_json["fave"][0]["value"],
+                "url": format_evendate_event_url(event_id),
+                "statuses": ["published"],
+                "updateDate": time_now
+            }
+        ]
+    }
+    return min_stats

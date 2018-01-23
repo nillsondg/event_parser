@@ -4,7 +4,7 @@ import parse_logger
 import json
 
 
-def post_to_evendate(event_desc):
+def post_event_to_evendate(event_desc):
     print("posting " + event_desc['detail_info_url'])
     headers = {'Authorization': config.AUTH_TOKEN}
     r = requests.post("https://evendate.io/api/v1/events/", data=json.dumps(event_desc), headers=headers)
@@ -42,3 +42,21 @@ def post_org_to_evendate(org_desc):
 
 def format_evendate_org_url(org_id):
     return "https://evendate.io/organization/" + str(org_id)
+
+
+def get_stats(event_id):
+    print("getting stats for event " + str(event_id))
+    headers = {'Authorization': config.AUTH_TOKEN}
+    r = requests.get(_format_stat_api_url(event_id), headers=headers)
+    print(r.status_code, r.reason)
+    text = r.text.encode().decode("unicode_escape")
+    if r.status_code == 200:
+        stats = json.loads(text)["data"]
+        return stats
+    else:
+        parse_logger.log_getting_event_stats_error(str(event_id), text)
+        return None, None
+
+
+def _format_stat_api_url(event_id):
+    return "http://evendate.io/api/v1/statistics/events/{}?scale=overall&fields=fave,view_detail".format(str(event_id))

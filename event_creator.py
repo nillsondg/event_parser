@@ -1,7 +1,7 @@
 import event_desc_parser
 import parse_logger
 import time
-from evendate_api import post_to_evendate
+from evendate_api import post_event_to_evendate
 
 
 def prepare_msg_header(org, done_list, error_list):
@@ -29,7 +29,7 @@ def __process_bunch(file_name, org, processor):
     for url in process_set:
         print("processing {}/{}".format(len(process_set) - len(process_set.difference(done_urls)), len(process_set)))
         try:
-            res_url, event_id = post_to_evendate(processor(url))
+            res_url, event_id = post_event_to_evendate(processor(url))
         except Exception as e:
             error_list.append(url)
             parse_logger.log_event_parsing_error(url, e)

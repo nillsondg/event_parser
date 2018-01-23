@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from lxml.etree import tostring
 import tmdbsimple as tmdb
 import config
+from utils import crop_img_to_16x9
 
 
 def get_grab():
@@ -28,7 +29,7 @@ def get_img(url):
     extension = mimetypes.guess_extension(content_type)
     if extension == ".jpe":
         extension = ".jpeg"
-    img = "data:{};base64,".format(content_type) + base64.b64encode(crop_img(img_raw.content)).decode("utf-8")
+    img = "data:{};base64,".format(content_type) + base64.b64encode(crop_img_to_16x9(img_raw.content)).decode("utf-8")
     filename = "image" + extension
     return img, filename
 
@@ -41,7 +42,7 @@ def find_img_in_tmdb(title):
         movie = search.results[0]
     except IndexError:
         return None, None
-    return prepare_cropped_img(crop_img(load_img(get_tmdb_img_url(movie['poster_path']))), "png")
+    return prepare_cropped_img(crop_img_to_16x9(load_img(get_tmdb_img_url(movie['poster_path']))), "png")
 
 
 def get_tmdb_img_url(path):
@@ -51,37 +52,6 @@ def get_tmdb_img_url(path):
 def load_img(url):
     img_raw = requests.get(url, allow_redirects=True)
     return img_raw.content
-
-
-def crop_img(img_raw):
-    from PIL import Image
-    from io import BytesIO
-    image = Image.open(BytesIO(img_raw))
-    width = image.size[0]
-    height = image.size[1]
-
-    aspect = width / float(height)
-
-    ideal_width = 1280
-    ideal_height = 720
-
-    ideal_aspect = ideal_width / float(ideal_height)
-
-    if aspect > ideal_aspect:
-        # Then crop the left and right edges:
-        new_width = int(ideal_aspect * height)
-        offset = (width - new_width) / 2
-        resize = (offset, 0, width - offset, height)
-    else:
-        # ... crop the top and bottom:
-        new_height = int(width / ideal_aspect)
-        offset = (height - new_height) / 2
-        resize = (0, offset, width, height - offset)
-
-    thumb = image.crop(resize).resize((ideal_width, ideal_height), Image.ANTIALIAS)
-    img_crop_raw = BytesIO()
-    thumb.save(img_crop_raw, format='PNG')
-    return img_crop_raw.getvalue()
 
 
 def prepare_cropped_img(img, extension):
@@ -182,7 +152,7 @@ def parse_from_cinemapark():
                "image_horizontal": img,
                "filenames": {'horizontal': filename}}
 
-        res_url, event_id = evendate_api.post_to_evendate(res)
+        res_url, event_id = evendate_api.post_event_to_evendate(res)
         if res_url is not None:
             parse_logger.write_url_to_file(parse_logger.events_desc_folder, file_name, url)
             done_list.append((res_url, url))
