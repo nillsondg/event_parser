@@ -103,8 +103,8 @@ def prepare_org(org_desc):
     try:
         city_id = get_evendate_city_id_from_mincult(locale)
     except KeyError:
-        print("can't get evendate city_id for ", locale)
-        raise ValueError("illegal locale_id " + locale)
+        print("can't get evendate city_id for", locale)
+        raise ValueError("illegal locale_id " + str(locale))
 
     def get_img(url):
         img_raw = requests.get(url, allow_redirects=True)
