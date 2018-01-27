@@ -137,11 +137,20 @@ def prepare_msg_text(done_list, error_list, update_list):
     return text
 
 
+def prepare_msg_sync_text(done_list, error_list):
+    text = ""
+    for url in done_list:
+        text += "SYNCED " + url + "\r\n"
+    for url in error_list:
+        text += "ERROR " + url + "\r\n"
+    return text
+
+
 def process_org(place_id, org_id):
     done_events = read_events_from_file(place_id)
     error_list = list()
     done_list = list()
-    update_list = list()
+    updated_list = list()
     # todo update
 
     try:
@@ -161,14 +170,7 @@ def process_org(place_id, org_id):
             else:
                 error_list.append("place_id: {}, _id: {}".format(place_id, _id))
 
-    fast_send_email(str(place_id), prepare_msg_text(done_list, error_list, update_list))
-
-
-def process_all():
-    exist_orgs = read_ors_from_file()
-    for min_id, even_id in exist_orgs.items():
-        sync_stats(min_id, even_id)
-        process_org(min_id, even_id)
+    fast_send_email(str(place_id), prepare_msg_text(done_list, error_list, updated_list))
 
 
 def sync_stats(place_id, org_id):
@@ -176,21 +178,28 @@ def sync_stats(place_id, org_id):
     error_list = list()
     done_list = list()
 
+    stats = {"items": []}
     for mincult_id, evendate_id in done_events.items():
         event_stats = evendate_api.get_stats(evendate_id)
         prepared_stats = prepare_stats(mincult_id, evendate_id, event_stats)
-        res = post_stats(prepared_stats)
-        if res is not None:
-            # todo temp
-            print(res)
-            print("synced stats for event mincult_id: {}, evendate_id: {}".format(mincult_id, evendate_id))
-            done_list.append(evendate_api.format_evendate_event_url(evendate_id))
-        else:
-            error_list.append(
-                "Error posting stats to mincult for mincult_id {}, evendate_id: {}".format(mincult_id, evendate_id))
+        stats["items"].append(prepared_stats)
+        done_list.append(evendate_api.format_evendate_event_url(evendate_id))
 
-    print("Synced stats for {}, error with {}".format(len(done_list), len(error_list)))
-    # fast_send_email(str(place_id), prepare_msg_text(done_list, error_list, update_list))
+    res = post_stats(stats)
+    if res is not None:
+        print_update_stats_res(res)
+        print("synced stats for org mincult_id: {}, evendate_id: {}".format(place_id, org_id))
+        print("Synced stats for {}".format(len(done_list)))
+        return True
+    else:
+        error_list.append(
+            "Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id))
+        return False
+
+
+def print_update_stats_res(res_json):
+    print("Updated: {}. Not Found: {}".format(res_json["result"]["updated"]["count"],
+                                              res_json["result"]["notFound"]["count"]))
 
 
 def prepare_stats(min_event_id, event_id, evendate_stats_json):
@@ -198,18 +207,32 @@ def prepare_stats(min_event_id, event_id, evendate_stats_json):
     # "{'fave': [{'value': 0, 'time_value': 1516725004}], 'view_detail': [{'value': 9, 'time_value': 1516725004}]}"
     time_now = int(round(time.time() * 1000))
     min_stats = {
-        "items": [
-            {
-                "entity": {
-                    "_id": min_event_id,
-                    "type": "events"
-                },
-                "views": evendate_stats_json["view_detail"][0]["value"],
-                "likes": evendate_stats_json["fave"][0]["value"],
-                "url": format_evendate_event_url(event_id),
-                "statuses": ["published"],
-                "updateDate": time_now
-            }
-        ]
+        "entity": {
+            "_id": min_event_id,
+            "type": "events"
+        },
+        "views": evendate_stats_json["view_detail"][0]["value"],
+        "likes": evendate_stats_json["fave"][0]["value"],
+        "url": format_evendate_event_url(event_id),
+        "statuses": ["published"],
+        "updateDate": time_now
     }
     return min_stats
+
+
+def process_all():
+    exist_orgs = read_ors_from_file()
+    done_list = []
+    error_list = []
+    for min_id, even_id in exist_orgs.items():
+        res_sync = sync_stats(min_id, even_id)
+        if res_sync:
+            done_list.append(min_id)
+        else:
+            error_list.append(min_id)
+        process_org(min_id, even_id)
+    fast_send_email(prepare_msg_header(done_list, error_list), prepare_msg_text(done_list, error_list, []))
+
+
+def prepare_msg_header(done_list, error_list):
+    return "Synced stats with Min cult +{}/-{}".format(len(done_list), len(error_list))

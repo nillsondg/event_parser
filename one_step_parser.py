@@ -90,6 +90,7 @@ def parse_from_cinemapark():
 
         if url in skip_set:
             continue
+        print("preparing " + url)
         hover_block = event.xpath('.//div[@class="poster-holder"]')[0]
         title = event.xpath('.//div[@class="film-title"]')[0].text.strip()
         # 'Жанр: исторический/фантастика/экш'
@@ -158,7 +159,7 @@ def parse_from_cinemapark():
             done_list.append((res_url, url))
         else:
             error_list.append(url)
-        time.sleep(2)
+        time.sleep(1)
 
     server = parse_logger.get_email_server()
     msg_header = event_creator.prepare_msg_header("Cinemapark", done_list, error_list)
