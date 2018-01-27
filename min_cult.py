@@ -8,6 +8,7 @@ from mincult_api import get_org_json, post_stats
 from evendate_api import format_evendate_event_url
 import time
 from utils import crop_img_to_16x9
+import min_cult_utils
 
 mincult_folder = "mincult_events/"
 
@@ -48,19 +49,7 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
 
     tags = prepare_tags()
 
-    def prepare_location():
-        place = event_json["places"][0]["address"]
-        region = place["region"]["name"]
-        city = place["city"]["type"] + " " + place["city"]["name"]
-        street = place["street"]["type"] + " " + place["street"]["name"]
-        try:
-            house = place["house"]["type"] + place["house"]["name"]
-        except KeyError:
-            house = place["house"]["name"]
-
-        return "{}, {}, {}, {}".format(region, city, street, house)
-
-    location = prepare_location()
+    location = min_cult_utils.prepare_location(event_json["places"][0]["address"])
 
     def prepare_dates():
         dates = []

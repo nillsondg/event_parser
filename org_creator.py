@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from evendate_api import post_org_to_evendate
 import datetime
 import mincult_api
+import min_cult_utils
 
 
 def get_type(type):
@@ -78,16 +79,7 @@ def prepare_org(org_desc):
     except KeyError:
         facebook_url = ""
 
-    def prepare_location(org_json):
-        place = org_json["address"]
-        region = place["region"]["name"]
-        city = place["city"]["type"] + " " + place["city"]["name"]
-        street = place["street"]["type"] + " " + place["street"]["name"]
-        house = place["house"]["type"] + " " + place["house"]["name"]
-
-        return "{}, {}, {}, {}".format(region, city, street, house)
-
-    default_address = prepare_location(org_desc)
+    default_address = min_cult_utils.prepare_location(org_desc["address"])
 
     type_id = get_type(convert_type_to_evendate(org_desc["category"]["name"]))
 
@@ -124,7 +116,8 @@ def prepare_org(org_desc):
 
     try:
         img, img_filename = get_img(prepare_img_link())
-    except Exception:
+    except Exception as e:
+        print(e)
         img, img_filename = get_default_img()
 
     def get_default_logo(img_name="evendate_logo_mini.png", ext="png"):
@@ -160,7 +153,7 @@ def write_orgs_to_file(org_dict, exist_org_dict):
     # todo need contract cause min_id input is int, but ouput can be str!!!
     for min_id, even_id in org_dict.items():
         if min_id not in exist_org_dict.keys():
-            f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + min_id + " " + even_id + "\n")
+            f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(min_id) + " " + str(even_id) + "\n")
             print("added " + min_id)
     f.close()
 
@@ -183,9 +176,9 @@ def add_org(place_ids):
         evendate_url, evendate_id = post_org_to_evendate(prepared_org)
         if evendate_url is not None:
             added_orgs[place_id] = evendate_id
+            write_orgs_to_file({place_id: evendate_id}, exist_orgs)
         else:
             error_orgs.append(place_id)
-    write_orgs_to_file(added_orgs, exist_orgs)
     parse_logger.fast_send_email("Added orgs from mincult " + str(len(added_orgs)),
                                  prepare_msg_text(added_orgs, error_orgs))
 
