@@ -47,6 +47,7 @@ def read_ignored_urls():
     return __read_urls_from_file(events_desc_folder, "_ignore.txt")
 
 
+# min cult
 def read_ors_from_file():
     exist_orgs = dict()
     file_name = "orgs.txt"

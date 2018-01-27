@@ -1,5 +1,4 @@
 import config
-import json
 import requests
 import parse_logger
 import mimetypes
@@ -7,21 +6,7 @@ import base64
 from bs4 import BeautifulSoup
 from evendate_api import post_org_to_evendate
 import datetime
-
-
-def get_org_from_mincult(place_id):
-    print("getting org from mincult for", str(place_id))
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
-    }
-    url = "https://all.culture.ru/api/2.3/places/{place_id}"
-
-    res_url = url.format(place_id=place_id, headers=headers)
-    r = requests.get(res_url)
-    print(r.status_code, r.reason)
-    if r.status_code == 200:
-        org_json = json.loads(r.content.decode('utf-8'))
-        return org_json
+import mincult_api
 
 
 def get_type(type):
@@ -162,9 +147,52 @@ def write_orgs_to_file(org_dict, exist_org_dict):
     f.close()
 
 
-# todo create in cycle and post result
-def add_org(place_id):
+def add_org(place_ids):
     exist_orgs = parse_logger.read_ors_from_file()
-    evendate_url, evendate_id = post_org_to_evendate(prepare_org(get_org_from_mincult(place_id)["place"]))
-    if evendate_url is not None:
-        write_orgs_to_file({place_id: evendate_id}, exist_orgs)
+    added_orgs = dict()
+    error_orgs = list()
+    for place_id in place_ids:
+        evendate_url, evendate_id = post_org_to_evendate(
+            prepare_org(mincult_api.get_org_from_mincult(place_id)["place"]))
+        if evendate_url is not None:
+            added_orgs[place_id] = evendate_id
+        else:
+            error_orgs.append(place_id)
+    write_orgs_to_file(added_orgs, exist_orgs)
+    parse_logger.fast_send_email("Added orgs from mincult " + str(len(added_orgs)),
+                                 prepare_msg_text(added_orgs, error_orgs))
+
+
+def prepare_msg_text(done_dict, error_list):
+    text = ""
+    for min_id, even_id in done_dict.items():
+        text += "ADDED min_id:{} | evendate_id:{}\r\n".format(min_id, even_id)
+    for min_id in error_list:
+        text += "ERROR min_id:{}\r\n".format(min_id)
+    return text
+
+
+def collect_orgs_from_events():
+    # msk, piter, novosib, ekb, nizh novgorod, kazan, sevastopol
+    locales = [2579, 203, 739, 2002, 1310, 1722]
+    categories = ["kinoteatry", "koncertnye-ploshchadki", "kulturnoe-nasledie",
+                  "muzei-i-galerei", "parki", "teatry"]
+    # "cirki", "dvorcy-kultury-i-kluby", "pamyatniki", "obrazovatelnye-uchrezhdeniya"
+    orgs = set()
+    for locale in locales:
+        for category in categories:
+            res_json = mincult_api.get_events_in_category(category, locale)
+            for event in res_json["events"]:
+                # if len(event["places"]) > 1:
+                #   print("got places > 1")
+                for org in event["places"]:
+                    try:
+                        orgs.add(org["_id"])
+                    except KeyError:
+                        pass
+    return orgs
+
+
+def bulk_add_orgs():
+    org_ids = collect_orgs_from_events()
+    add_org(org_ids)

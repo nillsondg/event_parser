@@ -231,7 +231,7 @@ def process_all():
         else:
             error_list.append(min_id)
         process_org(min_id, even_id)
-    fast_send_email(prepare_msg_header(done_list, error_list), prepare_msg_text(done_list, error_list, []))
+    fast_send_email(prepare_msg_header(done_list, error_list), prepare_msg_sync_text(done_list, error_list))
 
 
 def prepare_msg_header(done_list, error_list):
