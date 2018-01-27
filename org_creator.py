@@ -99,6 +99,13 @@ def prepare_org(org_desc):
     def prepare_img_link():
         "https://all.culture.ru/uploads/{name}".format(name=org_desc["image"]["name"])
 
+    locale = org_desc["locale"]["_id"]
+    try:
+        city_id = get_evendate_city_id_from_mincult(locale)
+    except KeyError:
+        print("can't get evendate city_id for ", locale)
+        raise ValueError("illegal locale_id " + locale)
+
     def get_img(url):
         img_raw = requests.get(url, allow_redirects=True)
         content_type = img_raw.headers['content-type']
@@ -141,7 +148,8 @@ def prepare_org(org_desc):
            "logo": logo,
            "logo_filename": logo_filename,
            "detail_info_url": detail_info_url,
-           "email": config.MY_EMAIL
+           "email": config.MY_EMAIL,
+           "city_id": city_id
            }
     return org
 
@@ -161,6 +169,9 @@ def add_org(place_ids):
     added_orgs = dict()
     error_orgs = list()
     for place_id in place_ids:
+        if place_id in exist_orgs.keys():
+            print("skip", place_id)
+            continue
         try:
             prepared_org = prepare_org(mincult_api.get_org_from_mincult(place_id)["place"])
         except Exception as e:
@@ -186,9 +197,20 @@ def prepare_msg_text(done_dict, error_list):
     return text
 
 
+def get_evendate_city_id_from_mincult(locale_id):
+    return {2579: 1,  # msk
+            205: 3,  # sevastopol
+            203: 4,  # piter
+            739: 5,  # novosib
+            2002: 6,  # ekb
+            1310: 7,  # nizh novgorod
+            1722: 8,  # kazan
+            }[locale_id]
+
+
 def collect_orgs_from_events():
     # msk, piter, novosib, ekb, nizh novgorod, kazan, sevastopol
-    locales = [2579, 203, 739, 2002, 1310, 1722]
+    locales = [2579, 203, 739, 2002, 1310, 1722, 205]
     categories = ["kinoteatry", "koncertnye-ploshchadki", "kulturnoe-nasledie",
                   "muzei-i-galerei", "parki", "teatry"]
     # "cirki", "dvorcy-kultury-i-kluby", "pamyatniki", "obrazovatelnye-uchrezhdeniya"
