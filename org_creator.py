@@ -65,9 +65,18 @@ def prepare_org(org_desc):
 
     description = prepare_description(cleanhtml(org_desc["description"]))
 
-    site_url = org_desc["contacts"]["website"]
-    vk_url = org_desc["contacts"]["vkontakte"]
-    facebook_url = org_desc["contacts"]["facebook"]
+    try:
+        site_url = org_desc["contacts"]["website"]
+    except KeyError:
+        site_url = ""
+    try:
+        vk_url = org_desc["contacts"]["vkontakte"]
+    except KeyError:
+        vk_url = ""
+    try:
+        facebook_url = org_desc["contacts"]["facebook"]
+    except KeyError:
+        facebook_url = ""
 
     def prepare_location(org_json):
         place = org_json["address"]
@@ -152,8 +161,13 @@ def add_org(place_ids):
     added_orgs = dict()
     error_orgs = list()
     for place_id in place_ids:
-        evendate_url, evendate_id = post_org_to_evendate(
-            prepare_org(mincult_api.get_org_from_mincult(place_id)["place"]))
+        try:
+            prepared_org = prepare_org(mincult_api.get_org_from_mincult(place_id)["place"])
+        except Exception as e:
+            print(e)
+            error_orgs.append(place_id)
+            continue
+        evendate_url, evendate_id = post_org_to_evendate(prepared_org)
         if evendate_url is not None:
             added_orgs[place_id] = evendate_id
         else:
