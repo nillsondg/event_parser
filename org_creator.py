@@ -157,6 +157,7 @@ def prepare_org(org_desc):
 def write_orgs_to_file(org_dict, exist_org_dict):
     file_name = "orgs.txt"
     f = open(file_name, 'a+')
+    # todo need contract cause min_id input is int, but ouput can be str!!!
     for min_id, even_id in org_dict.items():
         if min_id not in exist_org_dict.keys():
             f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + min_id + " " + even_id + "\n")
@@ -169,7 +170,8 @@ def add_org(place_ids):
     added_orgs = dict()
     error_orgs = list()
     for place_id in place_ids:
-        if place_id in exist_orgs.keys():
+        # todo temp to str
+        if str(place_id) in exist_orgs.keys():
             print("skip", place_id)
             continue
         try:
