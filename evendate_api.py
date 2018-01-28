@@ -51,11 +51,15 @@ def get_stats(event_id):
     print(r.status_code, r.reason)
     text = r.text.encode().decode("unicode_escape")
     if r.status_code == 200:
-        stats = json.loads(text)["data"]
+        try:
+            stats = json.loads(text)["data"]
+        except TypeError:
+            parse_logger.log_getting_event_stats_error(str(event_id), text)
+            return None
         return stats
     else:
         parse_logger.log_getting_event_stats_error(str(event_id), text)
-        return None, None
+        return None
 
 
 def _format_stat_api_url(event_id):

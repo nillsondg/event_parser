@@ -123,6 +123,11 @@ def sync_stats(place_id, org_id):
     stats = {"items": []}
     for mincult_id, evendate_id in done_events.items():
         event_stats = evendate_api.get_stats(evendate_id)
+        if event_stats is None:
+            error_list.append(
+                "Error getting stats to mincult for event mincult_id {}, evendate_id: {}".format(mincult_id,
+                                                                                                 evendate_id))
+            return False
         prepared_stats = prepare_stats(mincult_id, evendate_id, event_stats)
         stats["items"].append(prepared_stats)
         done_list.append(evendate_api.format_evendate_event_url(evendate_id))
