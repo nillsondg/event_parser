@@ -80,7 +80,7 @@ def write_mincult_orgs_to_file(org_dict, exist_org_dict):
     for min_id, even_id in org_dict.items():
         if min_id not in exist_org_dict.keys():
             f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(min_id) + " " + str(even_id) + "\n")
-            print("added " + min_id)
+            print("added", min_id)
     f.close()
 
 
