@@ -9,6 +9,7 @@ def get_org_events(place_id):
     url = "https://all.culture.ru/api/2.3/events?places={place_id}&status=accepted&start={start_timestamp}"
 
     res_url = url.format(place_id=place_id, start_timestamp=int(time.time() * 1000))
+    print(res_url)
     r = requests.get(res_url)
     print(r.status_code, r.reason)
     if r.status_code == 200:
@@ -26,6 +27,7 @@ def get_org_from_mincult(place_id):
     url = "https://all.culture.ru/api/2.3/places/{place_id}"
 
     res_url = url.format(place_id=place_id, headers=headers)
+    print(res_url)
     r = requests.get(res_url)
     print(r.status_code, r.reason)
     if r.status_code == 200:
@@ -36,8 +38,9 @@ def get_org_from_mincult(place_id):
 
 
 def post_stats(stats_json):
-    url = "https://all.culture.ru/api/2.2/import?apiKey={}".format(config.MINCULT_KEY)
+    url = "https://all.culture.ru/api/2.3/import?apiKey={}".format(config.MINCULT_KEY)
     headers = {'Content-type': "application/json"}
+    print(url)
     r = requests.post(url, data=json.dumps(stats_json), headers=headers)
     print(r.status_code, r.reason)
     if r.status_code == 200:
@@ -52,6 +55,7 @@ def get_events_in_category(category, locale):
     url = "https://all.culture.ru/api/2.3/events?status=accepted&start={}&locales={}&placeCategory={}&limit=50"
 
     res_url = url.format(int(time.time() * 1000), locale, category)
+    print(res_url)
     r = requests.get(res_url)
     print(r.status_code, r.reason)
     if r.status_code == 200:

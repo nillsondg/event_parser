@@ -87,7 +87,7 @@ def write_mincult_orgs_to_file(org_dict, exist_org_dict):
 def read_mincult_events_from_file(place_id):
     exist_ids = dict()
     try:
-        with open(mincult_folder + str(place_id) + ".txt") as f:
+        with open(mincult_events_folder + str(place_id) + ".txt") as f:
             for line in f:
                 date, min_id, even_id = line.strip().split(' ')
                 exist_ids[int(min_id)] = int(even_id)
@@ -97,6 +97,6 @@ def read_mincult_events_from_file(place_id):
 
 
 def write_mincult_event_to_file(place_id, mincult_id, evendate_id):
-    f = open(mincult_folder + str(place_id) + ".txt", 'a+')
+    f = open(mincult_events_folder + str(place_id) + ".txt", 'a+')
     f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(mincult_id) + " " + str(evendate_id) + "\n")
     f.close()

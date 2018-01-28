@@ -120,7 +120,9 @@ def sync_stats(place_id, org_id):
         prepared_stats = prepare_stats(mincult_id, evendate_id, event_stats)
         stats["items"].append(prepared_stats)
         done_list.append(evendate_api.format_evendate_event_url(evendate_id))
-
+    if len(stats["items"]) == 0:
+        print("Nothing to sync for mincult_id: {}, evendate_id: {}".format(place_id, org_id))
+        return True
     res = post_stats(stats)
     if res is not None:
         print_update_stats_res(res)
@@ -130,6 +132,7 @@ def sync_stats(place_id, org_id):
     else:
         error_list.append(
             "Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id))
+        print("Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id))
         return False
 
 
