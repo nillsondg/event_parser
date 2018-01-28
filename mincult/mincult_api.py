@@ -4,7 +4,7 @@ import requests
 import config
 
 
-def get_org_json(place_id):
+def get_org_events(place_id):
     print("getting events from mincult for", str(place_id))
     url = "https://all.culture.ru/api/2.3/events?places={place_id}&status=accepted&start={start_timestamp}"
 

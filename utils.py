@@ -25,5 +25,35 @@ def crop_img_to_16x9(img_raw):
 
     thumb = image.crop(resize).resize((ideal_width, ideal_height), Image.ANTIALIAS)
     img_crop_raw = BytesIO()
-    thumb.save(img_crop_raw, format='PNG')
+    thumb.convert('RGB').save(img_crop_raw, format='PNG')
     return img_crop_raw.getvalue()
+
+
+# todo remove evendate context
+def get_img(url):
+    import requests
+    import mimetypes
+    import base64
+    res = requests.get(url, allow_redirects=True)
+    content_type = res.headers['content-type']
+    extension = mimetypes.guess_extension(content_type)
+    if extension == ".jpe":
+        extension = ".jpeg"
+    img = "data:{};base64,".format(content_type) + base64.b64encode(crop_img_to_16x9(res.content)).decode("utf-8")
+    filename = "image" + extension
+    return img, filename
+
+
+def get_default_img(img_name="evendate.png", ext="png"):
+    import base64
+    with open("images/" + img_name, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+    image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
+    return image_horizontal, img_name
+
+
+def prepare_cropped_img(img, extension):
+    import base64
+    img = "data:{};base64,".format(extension) + base64.b64encode(img).decode("utf-8")
+    filename = "image." + extension
+    return img, filename

@@ -1,13 +1,11 @@
 import config
-import requests
 import parse_logger
-import mimetypes
 import base64
 from bs4 import BeautifulSoup
 from evendate_api import post_org_to_evendate
-import datetime
-import mincult_api
-import min_cult_utils
+from mincult import mincult_api, min_cult_utils
+from file_keeper import write_mincult_orgs_to_file, read_mincult_ors_from_file
+from utils import get_img, get_default_img
 
 
 def get_type(type):
@@ -31,7 +29,7 @@ def get_type(type):
 def convert_type_to_evendate(min_type):
     return {
         "Библиотеки": "Дополнительное образование",
-        "Дворцы культуры и клубы": "Клубы и Бары",
+        "Дворцы культуры и клубы": "Музеи",
         "Кинотеатры": "Кинотеатры",
         "Концертные площадки": "Концерты",
         "Культурное наследие": "Музеи",
@@ -59,10 +57,10 @@ def prepare_org(org_desc):
         soup = BeautifulSoup(raw_html, "lxml")
         return soup.get_text()
 
-    def prepare_description(description):
-        if len(description) > 250:
-            return description[:250]
-        return description
+    def prepare_description(desc):
+        if len(desc) > 250:
+            return desc[:250]
+        return desc
 
     description = prepare_description(cleanhtml(org_desc["description"]))
 
@@ -89,7 +87,7 @@ def prepare_org(org_desc):
     detail_info_url = prepare_link(org_desc["_id"])
 
     def prepare_img_link():
-        "https://all.culture.ru/uploads/{name}".format(name=org_desc["image"]["name"])
+        return "https://all.culture.ru/uploads/{name}".format(name=org_desc["image"]["name"])
 
     locale = org_desc["locale"]["_id"]
     try:
@@ -97,22 +95,6 @@ def prepare_org(org_desc):
     except KeyError:
         print("can't get evendate city_id for", locale)
         raise ValueError("illegal locale_id " + str(locale))
-
-    def get_img(url):
-        img_raw = requests.get(url, allow_redirects=True)
-        content_type = img_raw.headers['content-type']
-        extension = mimetypes.guess_extension(content_type)
-        if extension == ".jpe":
-            extension = ".jpeg"
-        img = "data:{};base64,".format(content_type) + base64.b64encode(img_raw.content).decode("utf-8")
-        filename = "image" + extension
-        return img, filename
-
-    def get_default_img(img_name="evendate.png", ext="png"):
-        with open("images/" + img_name, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read())
-        image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
-        return image_horizontal, img_name
 
     try:
         img, img_filename = get_img(prepare_img_link())
@@ -147,24 +129,12 @@ def prepare_org(org_desc):
     return org
 
 
-def write_orgs_to_file(org_dict, exist_org_dict):
-    file_name = "orgs.txt"
-    f = open(file_name, 'a+')
-    # todo need contract cause min_id input is int, but ouput can be str!!!
-    for min_id, even_id in org_dict.items():
-        if min_id not in exist_org_dict.keys():
-            f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(min_id) + " " + str(even_id) + "\n")
-            print("added " + min_id)
-    f.close()
-
-
-def add_org(place_ids):
-    exist_orgs = parse_logger.read_ors_from_file()
+def add_orgs(place_ids):
+    exist_orgs = read_mincult_ors_from_file()
     added_orgs = dict()
     error_orgs = list()
     for place_id in place_ids:
-        # todo temp to str
-        if str(place_id) in exist_orgs.keys():
+        if place_id in exist_orgs.keys():
             print("skip", place_id)
             continue
         try:
@@ -176,7 +146,7 @@ def add_org(place_ids):
         evendate_url, evendate_id = post_org_to_evendate(prepared_org)
         if evendate_url is not None:
             added_orgs[place_id] = evendate_id
-            write_orgs_to_file({place_id: evendate_id}, exist_orgs)
+            write_mincult_orgs_to_file({place_id: evendate_id}, exist_orgs)
         else:
             error_orgs.append(place_id)
     parse_logger.fast_send_email("Added orgs from mincult " + str(len(added_orgs)),
@@ -226,4 +196,4 @@ def collect_orgs_from_events():
 
 def bulk_add_orgs():
     org_ids = collect_orgs_from_events()
-    add_org(org_ids)
+    add_orgs(org_ids)

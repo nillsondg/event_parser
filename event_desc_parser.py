@@ -5,7 +5,7 @@ import datetime
 import re
 import base64
 import requests
-import mimetypes
+from utils import get_default_img, get_img
 import json
 
 
@@ -46,24 +46,6 @@ def get_public_date():
         .replace(day=datetime.datetime.today().day, hour=14, minute=0, second=0, microsecond=0)
     public_date += datetime.timedelta(days=1)
     return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-
-def get_default_img(img_name="evendate.png", ext="png"):
-    with open("images/" + img_name, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
-    image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
-    return image_horizontal, img_name
-
-
-def get_img(url):
-    img_raw = requests.get(url, allow_redirects=True)
-    content_type = img_raw.headers['content-type']
-    extension = mimetypes.guess_extension(content_type)
-    if extension == ".jpe":
-        extension = ".jpeg"
-    img = "data:{};base64,".format(content_type) + base64.b64encode(img_raw.content).decode("utf-8")
-    filename = "image" + extension
-    return img, filename
 
 
 def month_to_num(month):
@@ -702,9 +684,14 @@ def parse_desc_from_flacon(url):
         date_raw = date_block.text.strip().lower()
         time_raw = date_block.xpath('.//br')[0].tail.strip()
     except IndexError:
-        date_block = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[2]
-        date_raw = date_block.text.strip().lower()
-        time_raw = date_block.xpath('.//br')[0].tail.strip()
+        try:
+            date_block = header_info_block.xpath('.//div[@class="date"] | .//p[@class="date"]')[2]
+            date_raw = date_block.text.strip().lower()
+            time_raw = date_block.xpath('.//br')[0].tail.strip()
+        except IndexError:
+            date_block = header_info_block.xpath('.//h1')[0][0]
+            date_raw = date_block.tail.strip().lower()
+            time_raw = ""
 
     date_raw = date_raw.replace(u'\xa0', u' ')
 

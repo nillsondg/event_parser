@@ -2,6 +2,7 @@ import event_desc_parser
 import parse_logger
 import time
 from evendate_api import post_event_to_evendate
+from file_keeper import read_checked_urls, read_completed_urls, read_ignored_urls, write_completed_url
 
 
 def prepare_msg_header(org, done_list, error_list):
@@ -18,9 +19,9 @@ def prepare_msg_text(done_list, error_list):
 
 
 def __process_bunch(file_name, org, processor):
-    checked_urls = parse_logger.read_checked_urls(file_name)
-    done_urls = parse_logger.read_completed_urls(file_name)
-    ignored_urls = parse_logger.read_ignored_urls()
+    checked_urls = read_checked_urls(file_name)
+    done_urls = read_completed_urls(file_name)
+    ignored_urls = read_ignored_urls()
     process_set = checked_urls.difference(done_urls).difference(ignored_urls)
 
     done_list = []
@@ -35,7 +36,7 @@ def __process_bunch(file_name, org, processor):
             parse_logger.log_event_parsing_error(url, e)
             continue
         if res_url is not None:
-            parse_logger.write_url_to_file(parse_logger.events_desc_folder, file_name, url)
+            write_completed_url(file_name, url)
             done_list.append((res_url, url))
         else:
             error_list.append(url)

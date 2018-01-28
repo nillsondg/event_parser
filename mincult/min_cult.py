@@ -1,35 +1,13 @@
-import requests
 import datetime
-import mimetypes, base64
 import evendate_api
-from parse_logger import fast_send_email, log_loading_mincult_error, read_ors_from_file
+from parse_logger import fast_send_email, log_loading_mincult_error
 from bs4 import BeautifulSoup
-from mincult_api import get_org_json, post_stats
+from mincult.mincult_api import get_org_events, post_stats
 from evendate_api import format_evendate_event_url
 import time
-from utils import crop_img_to_16x9
-import min_cult_utils
-
-mincult_folder = "mincult_events/"
-
-
-def read_events_from_file(place_id):
-    exist_ids = dict()
-    try:
-        with open(mincult_folder + str(place_id) + ".txt") as f:
-            for line in f:
-                mincult_id = int(line.strip().split(' ')[1])
-                evendate_id = int(line.strip().split(' ')[2])
-                exist_ids[mincult_id] = evendate_id
-    except IOError:
-        pass
-    return exist_ids
-
-
-def write_url_to_file(place_id, mincult_id, evendate_id):
-    f = open(mincult_folder + str(place_id) + ".txt", 'a+')
-    f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(mincult_id) + " " + str(evendate_id) + "\n")
-    f.close()
+from utils import get_img
+from mincult import min_cult_utils
+from file_keeper import read_mincult_events_from_file, write_mincult_event_to_file, read_mincult_ors_from_file
 
 
 def get_eventdesc_from_mincult(place_id, org_id, event_json):
@@ -91,17 +69,6 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
         public_date += datetime.timedelta(days=1)
         return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    def get_img(url):
-        res = requests.get(url, allow_redirects=True)
-        content_type = res.headers['content-type']
-        extension = mimetypes.guess_extension(content_type)
-        if extension == ".jpe":
-            extension = ".jpeg"
-        img = "data:{};base64,".format(content_type) + base64.b64encode(crop_img_to_16x9(res.content)) \
-            .decode("utf-8")
-        filename = "image" + extension
-        return img, filename
-
     img, filename = get_img(img_url)
     detail_url_format = "https://all.culture.ru/public/events/{id}"
     detail_url = detail_url_format.format(id=event_json["_id"])
@@ -115,35 +82,15 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
     return res
 
 
-def prepare_msg_text(done_list, error_list, update_list):
-    text = ""
-    for url in done_list:
-        text += "ADDED " + url + "\r\n"
-    for url in error_list:
-        text += "ERROR " + url + "\r\n"
-    for url in update_list:
-        text += "UPDATED " + url + "\r\n"
-    return text
-
-
-def prepare_msg_sync_text(done_list, error_list):
-    text = ""
-    for url in done_list:
-        text += "SYNCED " + url + "\r\n"
-    for url in error_list:
-        text += "ERROR " + url + "\r\n"
-    return text
-
-
 def process_org(place_id, org_id):
-    done_events = read_events_from_file(place_id)
+    done_events = read_mincult_events_from_file(place_id)
     error_list = list()
     done_list = list()
     updated_list = list()
     # todo update
 
     try:
-        events_json = get_org_json(place_id)
+        events_json = get_org_events(place_id)
     except Exception as e:
         log_loading_mincult_error(place_id, e)
         return
@@ -154,16 +101,16 @@ def process_org(place_id, org_id):
         if _id not in done_events.keys():
             evendate_url, evendate_id = evendate_api.post_event_to_evendate(event_desc)
             if evendate_url is not None:
-                write_url_to_file(place_id, _id, evendate_id)
+                write_mincult_event_to_file(place_id, _id, evendate_id)
                 done_list.append(evendate_url)
             else:
                 error_list.append("place_id: {}, _id: {}".format(place_id, _id))
 
-    fast_send_email(str(place_id), prepare_msg_text(done_list, error_list, updated_list))
+    return done_list, error_list
 
 
 def sync_stats(place_id, org_id):
-    done_events = read_events_from_file(place_id)
+    done_events = read_mincult_events_from_file(place_id)
     error_list = list()
     done_list = list()
 
@@ -210,18 +157,49 @@ def prepare_stats(min_event_id, event_id, evendate_stats_json):
 
 
 def process_all():
-    exist_orgs = read_ors_from_file()
+    exist_orgs = read_mincult_ors_from_file()
+    done_stat_list = []
+    error_stat_list = []
     done_list = []
     error_list = []
+    updated_list = []
     for min_id, even_id in exist_orgs.items():
         res_sync = sync_stats(min_id, even_id)
         if res_sync:
-            done_list.append(min_id)
+            done_stat_list.append(min_id)
         else:
-            error_list.append(min_id)
-        process_org(min_id, even_id)
-    fast_send_email(prepare_msg_header(done_list, error_list), prepare_msg_sync_text(done_list, error_list))
+            error_stat_list.append(min_id)
+        done, errors = process_org(min_id, even_id)
+        done_list.extend(done)
+        error_list.extend(errors)
+    fast_send_email(prepare_msg_sync_header(done_stat_list, error_stat_list),
+                    prepare_msg_sync_text(done_stat_list, error_stat_list))
+    fast_send_email(prepare_msg_header(done_list, error_list), prepare_msg_text(done_list, error_list, updated_list))
 
 
 def prepare_msg_header(done_list, error_list):
+    return "Added events from Min cult +{}/-{}".format(len(done_list), len(error_list))
+
+
+def prepare_msg_sync_header(done_list, error_list):
     return "Synced stats with Min cult +{}/-{}".format(len(done_list), len(error_list))
+
+
+def prepare_msg_text(done_list, error_list, update_list):
+    text = ""
+    for url in done_list:
+        text += "ADDED " + url + "\r\n"
+    for url in error_list:
+        text += "ERROR " + url + "\r\n"
+    for url in update_list:
+        text += "UPDATED " + url + "\r\n"
+    return text
+
+
+def prepare_msg_sync_text(done_list, error_list):
+    text = ""
+    for url in done_list:
+        text += "SYNCED " + url + "\r\n"
+    for url in error_list:
+        text += "ERROR " + url + "\r\n"
+    return text

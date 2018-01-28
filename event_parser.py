@@ -1,9 +1,6 @@
 from grab import Grab
-import datetime
-from parse_logger import read_checked_urls
+from file_keeper import read_checked_urls, write_events_to_file
 from parse_logger import log_catalog_error
-
-urls_folder = "events/"
 
 
 def get_grab():
@@ -13,15 +10,6 @@ def get_grab():
     g = Grab(log_file='out.html', headers=headers)
     g.setup(connect_timeout=60, timeout=60)
     return g
-
-
-def write_events_to_file(file_name, url_set, exist_url_set):
-    f = open(urls_folder + file_name, 'a+')
-    for url in url_set:
-        if url not in exist_url_set:
-            f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + url + "\n")
-            print("added " + url)
-    f.close()
 
 
 def parse_from_strelka():

@@ -1,7 +1,7 @@
 from grab import Grab
 import datetime
 import re
-import requests, mimetypes, base64
+import requests, base64
 import event_desc_parser as parser
 import time
 import parse_logger
@@ -11,7 +11,8 @@ from bs4 import BeautifulSoup
 from lxml.etree import tostring
 import tmdbsimple as tmdb
 import config
-from utils import crop_img_to_16x9
+from utils import crop_img_to_16x9, get_img
+from file_keeper import write_completed_url, read_completed_urls, read_ignored_urls
 
 
 def get_grab():
@@ -21,17 +22,6 @@ def get_grab():
     g = Grab(log_file='out.html', headers=headers)
     g.setup(connect_timeout=60, timeout=60)
     return g
-
-
-def get_img(url):
-    img_raw = requests.get(url, allow_redirects=True)
-    content_type = img_raw.headers['content-type']
-    extension = mimetypes.guess_extension(content_type)
-    if extension == ".jpe":
-        extension = ".jpeg"
-    img = "data:{};base64,".format(content_type) + base64.b64encode(crop_img_to_16x9(img_raw.content)).decode("utf-8")
-    filename = "image" + extension
-    return img, filename
 
 
 def find_img_in_tmdb(title):
@@ -50,8 +40,8 @@ def get_tmdb_img_url(path):
 
 
 def load_img(url):
-    img_raw = requests.get(url, allow_redirects=True)
-    return img_raw.content
+    res = requests.get(url, allow_redirects=True)
+    return res.content
 
 
 def prepare_cropped_img(img, extension):
@@ -79,8 +69,8 @@ def parse_from_cinemapark():
     # note when you select 2 a hover_block can change it's structure (there is not first text with film type)
     events = main.xpath('.//div[contains(@class, "afisha-item afisha-film") and @data-category="1"]')
 
-    done_urls = parse_logger.read_completed_urls(file_name)
-    ignored_urls = parse_logger.read_ignored_urls()
+    done_urls = read_completed_urls(file_name)
+    ignored_urls = read_ignored_urls()
     skip_set = set(done_urls).union(set(ignored_urls))
     for event in events:
         url = event.xpath('.//a[@class="btn btn-block btn-default" or @class="btn btn-block btn-primary"]')[0].get(
@@ -155,7 +145,7 @@ def parse_from_cinemapark():
 
         res_url, event_id = evendate_api.post_event_to_evendate(res)
         if res_url is not None:
-            parse_logger.write_url_to_file(parse_logger.events_desc_folder, file_name, url)
+            write_completed_url(file_name, url)
             done_list.append((res_url, url))
         else:
             error_list.append(url)
