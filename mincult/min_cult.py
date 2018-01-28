@@ -1,6 +1,6 @@
 import datetime
 import evendate_api
-from parse_logger import fast_send_email, log_loading_mincult_error
+from parse_logger import fast_send_email, log_loading_mincult_error, log_preparing_mincult_error
 from bs4 import BeautifulSoup
 from mincult.mincult_api import get_org_events, post_stats
 from evendate_api import format_evendate_event_url
@@ -93,18 +93,24 @@ def process_org(place_id, org_id):
         events_json = get_org_events(place_id)
     except Exception as e:
         log_loading_mincult_error(place_id, e)
-        return
+        return done_list, error_list
 
     for event in events_json["events"]:
-        event_desc = get_eventdesc_from_mincult(place_id, org_id, event)
         _id = event["_id"]
-        if _id not in done_events.keys():
-            evendate_url, evendate_id = evendate_api.post_event_to_evendate(event_desc)
-            if evendate_url is not None:
-                write_mincult_event_to_file(place_id, _id, evendate_id)
-                done_list.append(evendate_url)
-            else:
-                error_list.append("place_id: {}, _id: {}".format(place_id, _id))
+        if _id in done_events.keys():
+            continue
+        try:
+            event_desc = get_eventdesc_from_mincult(place_id, org_id, event)
+        except Exception as e:
+            log_preparing_mincult_error(_id, e)
+            return done_list, error_list
+
+        evendate_url, evendate_id = evendate_api.post_event_to_evendate(event_desc)
+        if evendate_url is not None:
+            write_mincult_event_to_file(place_id, _id, evendate_id)
+            done_list.append(evendate_url)
+        else:
+            error_list.append("place_id: {}, _id: {}".format(place_id, _id))
 
     return done_list, error_list
 

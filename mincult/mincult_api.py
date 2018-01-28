@@ -40,7 +40,6 @@ def get_org_from_mincult(place_id):
 def post_stats(stats_json):
     url = "https://all.culture.ru/api/2.3/import?apiKey={}".format(config.MINCULT_KEY)
     headers = {'Content-type': "application/json"}
-    print(url)
     r = requests.post(url, data=json.dumps(stats_json), headers=headers)
     print(r.status_code, r.reason)
     if r.status_code == 200:

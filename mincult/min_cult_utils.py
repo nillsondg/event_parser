@@ -14,6 +14,9 @@ def prepare_location(addr_json):
     try:
         house = place["house"]["type"] + place["house"]["name"]
     except KeyError:
-        house = place["house"]["name"]
+        try:
+            house = place["house"]["name"]
+        except KeyError:
+            house = ""
 
     return "{}, {}, {}, {}".format(region, city, street, house)

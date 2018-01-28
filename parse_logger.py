@@ -33,6 +33,11 @@ def log_loading_mincult_error(place_id, e):
     fast_send_email("Error loading mincult org " + str(place_id), "ERROR LOADING MINCULT EVENTS " + str(e))
 
 
+def log_preparing_mincult_error(place_id, e):
+    print("ERROR PREPARING MINCULT EVENT", e)
+    fast_send_email("Error loading mincult org " + str(place_id), "ERROR LOADING MINCULT EVENTS " + str(e))
+
+
 def get_email_server():
     if config.SMTP_SERVER == 'smtp.yandex.ru':
         server = smtplib.SMTP_SSL(config.SMTP_SERVER)
