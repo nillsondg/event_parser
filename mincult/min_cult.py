@@ -202,18 +202,18 @@ def prepare_msg_sync_header(done_list, error_list):
 def prepare_msg_text(done_list, error_list, update_list):
     text = ""
     for url in done_list:
-        text += "ADDED " + url + "\r\n"
+        text += "ADDED {}\r\n".format(url)
     for url in error_list:
-        text += "ERROR " + url + "\r\n"
+        text += "ERROR {}\r\n".format(url)
     for url in update_list:
-        text += "UPDATED " + url + "\r\n"
+        text += "UPDATED {}\r\n".format(url)
     return text
 
 
 def prepare_msg_sync_text(done_list, error_list):
     text = ""
     for url in done_list:
-        text += "SYNCED " + url + "\r\n"
+        text += "SYNCED {}\r\n".format(url)
     for url in error_list:
-        text += "ERROR " + url + "\r\n"
+        text += "ERROR {}\r\n".format(url)
     return text
