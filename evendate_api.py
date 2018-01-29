@@ -40,6 +40,23 @@ def post_org_to_evendate(org_desc):
         return None, None
 
 
+def update_org_in_evendate(org_id, org_desc):
+    print("posting " + org_desc['site_url'])
+    headers = {'Authorization': config.AUTH_TOKEN}
+    r = requests.put("https://evendate.io/api/v1/organizations/{}".format(org_id), data=json.dumps(org_desc),
+                     headers=headers)
+    print(r.status_code, r.reason)
+    text = r.text.encode().decode("unicode_escape")
+    if r.status_code == 200:
+        org = json.loads(text)["data"]
+        evendate_url = format_evendate_org_url(org["organization_id"])
+        print("UPDATED " + evendate_url)
+        return evendate_url, org["organization_id"]
+    else:
+        parse_logger.log_posting_org_error(org_desc['site_url'], text)
+        return None, None
+
+
 def format_evendate_org_url(org_id):
     return "https://evendate.io/organization/" + str(org_id)
 

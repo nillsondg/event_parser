@@ -1,4 +1,4 @@
-from grab import Grab
+from grab import Grab, error
 from file_keeper import read_checked_urls, write_events_to_file
 from parse_logger import log_catalog_error
 
@@ -17,9 +17,13 @@ def parse_from_strelka():
     strelka_url = "http://strelka.com/ru/events"
     base_url = "http://strelka.com"
 
-    g = get_grab()
-    g.go(strelka_url)
     print("check " + strelka_url)
+    g = get_grab()
+    try:
+        g.go(strelka_url)
+    except error.GrabTimeoutError as e:
+        print("got timeout", e)
+        return
 
     event_blocks = list()
     event_blocks.append(g.doc.select('//div[@class="new_container new_blocks_container"]').node())
@@ -52,9 +56,13 @@ def parse_from_strelka():
 
 
 def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter):
-    g = get_grab()
-    g.go(do_url)
     print("check " + do_url)
+    g = get_grab()
+    try:
+        g.go(do_url)
+    except error.GrabTimeoutError as e:
+        print("get timeout", e)
+        return
 
     try:
         main = g.doc.select(main_pattern).node()

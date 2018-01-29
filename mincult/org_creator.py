@@ -2,7 +2,7 @@ import config
 import parse_logger
 import base64
 from bs4 import BeautifulSoup
-from evendate_api import post_org_to_evendate
+from evendate_api import post_org_to_evendate, update_org_in_evendate
 from mincult import mincult_api, min_cult_utils
 from file_keeper import write_mincult_orgs_to_file, read_mincult_ors_from_file
 from utils import get_img, get_default_img
@@ -153,10 +153,38 @@ def add_orgs(place_ids):
                                  prepare_msg_text(added_orgs, error_orgs))
 
 
+def update_orgs(place_ids):
+    updated_orgs = dict()
+    error_orgs = list()
+    for place_id, evendate_id in place_ids.items():
+        try:
+            prepared_org = prepare_org(mincult_api.get_org_from_mincult(place_id)["place"])
+        except Exception as e:
+            print(e)
+            error_orgs.append(place_id)
+            continue
+        evendate_url, evendate_id = update_org_in_evendate(evendate_id, prepared_org)
+        if evendate_url is not None:
+            updated_orgs[place_id] = evendate_id
+        else:
+            error_orgs.append(place_id)
+    parse_logger.fast_send_email("Updated orgs from mincult " + str(len(updated_orgs)),
+                                 prepare_update_msg_text(updated_orgs, error_orgs))
+
+
 def prepare_msg_text(done_dict, error_list):
     text = ""
     for min_id, even_id in done_dict.items():
         text += "ADDED min_id:{} | evendate_id:{}\r\n".format(min_id, even_id)
+    for min_id in error_list:
+        text += "ERROR min_id:{}\r\n".format(min_id)
+    return text
+
+
+def prepare_update_msg_text(done_dict, error_list):
+    text = ""
+    for min_id, even_id in done_dict.items():
+        text += "UPDATED min_id:{} | evendate_id:{}\r\n".format(min_id, even_id)
     for min_id in error_list:
         text += "ERROR min_id:{}\r\n".format(min_id)
     return text
@@ -197,3 +225,20 @@ def collect_orgs_from_events():
 def bulk_add_orgs():
     org_ids = collect_orgs_from_events()
     add_orgs(org_ids)
+
+
+def bulk_update_orgs():
+    def read_update_orgs_from_file():
+        exist_orgs = dict()
+        file_name = "update.txt"
+        try:
+            with open(file_name) as f:
+                for line in f:
+                    date, min_id, even_id = line.strip().split(' ')
+                    exist_orgs[int(min_id)] = int(even_id)
+        except IOError:
+            pass
+        return exist_orgs
+
+    org_ids = read_update_orgs_from_file()
+    update_orgs(org_ids)
