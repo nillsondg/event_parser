@@ -193,21 +193,30 @@ def prepare_update_msg_text(done_dict, error_list):
 
 def get_evendate_city_id_from_mincult(locale_id):
     return {2579: 1,  # msk
-            205: 3,  # sevastopol
+            1641: 2,  # Saratov
+            205: 3,  # Sevastopol
             203: 4,  # piter
             739: 5,  # novosib
             2002: 6,  # ekb
             1310: 7,  # nizh novgorod
             1722: 8,  # kazan
+            2591: 9,  # Chelyabinsk
+            805: 10,  # Omsk
+            1572: 11,  # Samara
+            1643: 12,  # Rostov-on-Don
+            1170: 13,  # Ufa
+            718: 14,  # Krasnoyarsk
+            1495: 15,  # Perm
+            552: 16,  # Voronezh
+            2568: 17,  # Volgograd
+            1449: 18,  # Krasnodar
+            2196: 19,  # Нальчик
+            1469: 20,  # Сочи
+            2038: 21,  # Калининград
             }[locale_id]
 
 
-def collect_orgs_from_events():
-    # msk, piter, novosib, ekb, nizh novgorod, kazan, sevastopol
-    locales = [2579, 203, 739, 2002, 1310, 1722, 205]
-    categories = ["kinoteatry", "koncertnye-ploshchadki", "kulturnoe-nasledie",
-                  "muzei-i-galerei", "parki", "teatry"]
-    # "cirki", "dvorcy-kultury-i-kluby", "pamyatniki", "obrazovatelnye-uchrezhdeniya"
+def collect_orgs_from_events(locales, categories):
     orgs = set()
     for locale in locales:
         for category in categories:
@@ -224,7 +233,13 @@ def collect_orgs_from_events():
 
 
 def bulk_add_orgs():
-    org_ids = collect_orgs_from_events()
+    locales = [2579, 1641, 205, 203, 739, 2002, 1310, 1722, 2591,
+               805, 1572, 1643, 1170, 718, 1495, 552, 2568, 1449,
+               2196, 1469, 2038]
+    categories = ["koncertnye-ploshchadki", "kulturnoe-nasledie",
+                  "muzei-i-galerei", "parki", "teatry"]
+    # "kinoteatry", "cirki", "dvorcy-kultury-i-kluby", "pamyatniki", "obrazovatelnye-uchrezhdeniya"
+    org_ids = collect_orgs_from_events(locales, categories)
     add_orgs(org_ids)
 
 
