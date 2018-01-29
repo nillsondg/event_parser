@@ -74,6 +74,17 @@ def read_mincult_ors_from_file():
     return exist_orgs
 
 
+def read_mincult_ignored_orgs():
+    ignore_urls = set()
+    try:
+        with open(mincult_folder + "_ignore.txt") as f:
+            for line in f:
+                ignore_urls.add(int(line.strip()))
+    except IOError:
+        pass
+    return ignore_urls
+
+
 def write_mincult_orgs_to_file(org_dict, exist_org_dict):
     file_name = mincult_folder + "orgs.txt"
     f = open(file_name, 'a+')

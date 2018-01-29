@@ -4,7 +4,7 @@ import base64
 from bs4 import BeautifulSoup
 from evendate_api import post_org_to_evendate, update_org_in_evendate
 from mincult import mincult_api, min_cult_utils
-from file_keeper import write_mincult_orgs_to_file, read_mincult_ors_from_file
+from file_keeper import write_mincult_orgs_to_file, read_mincult_ors_from_file, read_ignored_urls
 from utils import get_img, get_default_img
 
 
@@ -131,10 +131,11 @@ def prepare_org(org_desc):
 
 def add_orgs(place_ids):
     exist_orgs = read_mincult_ors_from_file()
+    ignore_orgs = read_ignored_urls()
     added_orgs = dict()
     error_orgs = list()
     for place_id in place_ids:
-        if place_id in exist_orgs.keys():
+        if place_id in exist_orgs.keys() or place_id in ignore_orgs:
             print("skip", place_id)
             continue
         try:

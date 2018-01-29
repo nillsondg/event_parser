@@ -41,7 +41,7 @@ def post_org_to_evendate(org_desc):
 
 
 def update_org_in_evendate(org_id, org_desc):
-    print("posting " + org_desc['site_url'])
+    print("updating " + org_desc['site_url'])
     headers = {'Authorization': config.AUTH_TOKEN}
     r = requests.put("https://evendate.io/api/v1/organizations/{}".format(org_id), data=json.dumps(org_desc),
                      headers=headers)
