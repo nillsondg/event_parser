@@ -93,7 +93,7 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
     res = {"organization_id": org_id, "title": title, "dates": prepare_evendate_dates(dates), "location": location,
            "description": prepare_desc(description), "is_free": is_free, "min_price": price,
            "tags": tags,
-           "detail_info_url": detail_url, "public_at": get_public_date(),
+           "detail_info_url": detail_url,
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
