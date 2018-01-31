@@ -1,8 +1,9 @@
 import datetime
 import evendate_api
-from parse_logger import fast_send_email, log_loading_mincult_error, log_preparing_mincult_error
+from parse_logger import fast_send_email, log_loading_mincult_error, log_preparing_mincult_error, \
+    log_loading_mincult_event_error
 from bs4 import BeautifulSoup
-from mincult.mincult_api import get_org_events, post_stats
+from mincult.mincult_api import get_org_events, post_stats, get_event_from_mincult
 from evendate_api import format_evendate_event_url
 import time
 from utils import get_img
@@ -72,8 +73,22 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
         return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     img, filename = get_img(img_url)
-    detail_url_format = "https://all.culture.ru/public/events/{id}"
-    detail_url = detail_url_format.format(id=event_json["_id"])
+
+    def prepare_detail_url():
+        url = ""
+        for info in event_json['externalInfo']:
+            if "culture.ru" in info["url"]:
+                return info["url"]
+            if "mkrj.ru" in info["url"]:
+                url = info["url"]
+        if url is not None:
+            return url
+        else:
+            url_format = "https://all.culture.ru/public/events/{id}"
+            url = url_format.format(id=event_json["_id"])
+            return url
+
+    detail_url = prepare_detail_url()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_evendate_dates(dates), "location": location,
            "description": prepare_desc(description), "is_free": is_free, "min_price": price,
@@ -193,12 +208,55 @@ def process_all():
     fast_send_email(prepare_msg_header(done_list, error_list), prepare_msg_text(done_list, error_list, updated_list))
 
 
+def update_org(place_id, org_id):
+    done_events = read_mincult_events_from_file(place_id)
+    error_list = list()
+    done_list = list()
+
+    for min_id, even_id in done_events.items():
+        try:
+            event_json = get_event_from_mincult(min_id)
+        except Exception as e:
+            log_loading_mincult_event_error(min_id, e)
+            return done_list, error_list
+
+        try:
+            event_desc = get_eventdesc_from_mincult(place_id, org_id, event_json)
+        except Exception as e:
+            log_preparing_mincult_error(min_id, e)
+            return done_list, error_list
+
+        evendate_url, evendate_id = evendate_api.put_event_to_evendate(even_id, event_desc)
+        if evendate_url is not None:
+            done_list.append(evendate_url)
+        else:
+            error_list.append("place_id: {}, _id: {}".format(place_id, min_id))
+
+    return done_list, error_list
+
+
+def update_all():
+    exist_orgs = read_mincult_ors_from_file()
+    done_list = []
+    error_list = []
+    for min_id, even_id in exist_orgs.items():
+        done, errors = update_org(min_id, even_id)
+        done_list.extend(done)
+        error_list.extend(errors)
+    fast_send_email(prepare_msg_update_header(done_list, error_list),
+                    prepare_msg_update_text(done_list, error_list))
+
+
 def prepare_msg_header(done_list, error_list):
     return "Added events from Min cult +{}/-{}".format(len(done_list), len(error_list))
 
 
 def prepare_msg_sync_header(done_list, error_list):
     return "Synced stats with Min cult +{}/-{}".format(len(done_list), len(error_list))
+
+
+def prepare_msg_update_header(done_list, error_list):
+    return "Updated events with Min cult +{}/-{}".format(len(done_list), len(error_list))
 
 
 def prepare_msg_text(done_list, error_list, update_list):
@@ -220,3 +278,11 @@ def prepare_msg_sync_text(done_list, error_list):
         text += "ERROR {}\r\n".format(url)
     return text
 
+
+def prepare_msg_update_text(done_list, error_list):
+    text = ""
+    for url in done_list:
+        text += "UPDATED {}\r\n".format(url)
+    for url in error_list:
+        text += "ERROR {}\r\n".format(url)
+    return text

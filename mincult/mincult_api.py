@@ -21,18 +21,30 @@ def get_org_events(place_id):
 
 def get_org_from_mincult(place_id):
     print("getting org from mincult for", str(place_id))
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0'
-    }
     url = "https://all.culture.ru/api/2.3/places/{place_id}"
 
-    res_url = url.format(place_id=place_id, headers=headers)
+    res_url = url.format(place_id=place_id)
     print(res_url)
     r = requests.get(res_url)
     print(r.status_code, r.reason)
     if r.status_code == 200:
         org_json = json.loads(r.content.decode('utf-8'))
         return org_json
+    else:
+        return None
+
+
+def get_event_from_mincult(event_id):
+    print("getting event from mincult for", str(event_id))
+    url = "https://all.culture.ru/api/2.3/events/{event_id}"
+
+    res_url = url.format(event_id=event_id)
+    print(res_url)
+    r = requests.get(res_url)
+    print(r.status_code, r.reason)
+    if r.status_code == 200:
+        event_json = json.loads(r.content.decode('utf-8'))
+        return event_json["event"]
     else:
         return None
 
