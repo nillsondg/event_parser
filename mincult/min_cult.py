@@ -220,5 +220,3 @@ def prepare_msg_sync_text(done_list, error_list):
         text += "ERROR {}\r\n".format(url)
     return text
 
-
-process_org(6143, -1)
