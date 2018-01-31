@@ -48,6 +48,8 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
             event_date = day[0].strftime('%Y-%m-%d')
             start_time = day[0].strftime('%H:%M')
             end_time = day[1].strftime('%H:%M')
+            if end_time == "00:00":
+                end_time = "23:59"
             date = {"event_date": event_date, "start_time": start_time, "end_time": end_time}
             new_dates.append(date)
         return new_dates
@@ -74,7 +76,7 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
     detail_url = detail_url_format.format(id=event_json["_id"])
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_evendate_dates(dates), "location": location,
-           "description": prepare_desc(description), "is_free": is_free, "price": price,
+           "description": prepare_desc(description), "is_free": is_free, "min_price": price,
            "tags": tags,
            "detail_info_url": detail_url, "public_at": get_public_date(),
            "image_horizontal": img,
@@ -217,3 +219,6 @@ def prepare_msg_sync_text(done_list, error_list):
     for url in error_list:
         text += "ERROR {}\r\n".format(url)
     return text
+
+
+process_org(6143, -1)
