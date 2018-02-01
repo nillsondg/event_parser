@@ -11,7 +11,7 @@ from mincult import min_cult_utils
 from file_keeper import read_mincult_events_from_file, write_mincult_event_to_file, read_mincult_ors_from_file
 
 
-def get_eventdesc_from_mincult(place_id, org_id, event_json):
+def get_eventdesc_from_mincult(org_id, event_json):
     title = event_json["name"]
     description = event_json["description"]
     is_free = event_json["isFree"]
@@ -75,18 +75,24 @@ def get_eventdesc_from_mincult(place_id, org_id, event_json):
     img, filename = get_img(img_url)
 
     def prepare_detail_url():
-        url = ""
-        for info in event_json['externalInfo']:
-            if "culture.ru" in info["url"]:
-                return info["url"]
-            if "mkrj.ru" in info["url"]:
-                url = info["url"]
-        if url is not None:
-            return url
-        else:
+        def get_default_url(id):
             url_format = "https://all.culture.ru/public/events/{id}"
-            url = url_format.format(id=event_json["_id"])
+            url = url_format.format(id=id)
             return url
+
+        url = ""
+        try:
+            for info in event_json['externalInfo']:
+                if "culture.ru" in info["url"]:
+                    return info["url"]
+                if "mkrj.ru" in info["url"]:
+                    url = info["url"]
+            if url is not None:
+                return url
+            else:
+                return get_default_url(event_json["_id"])
+        except KeyError:
+            return get_default_url(event_json["_id"])
 
     detail_url = prepare_detail_url()
 
@@ -214,25 +220,34 @@ def update_org(place_id, org_id):
     done_list = list()
 
     for min_id, even_id in done_events.items():
-        try:
-            event_json = get_event_from_mincult(min_id)
-        except Exception as e:
-            log_loading_mincult_event_error(min_id, e)
-            return done_list, error_list
-
-        try:
-            event_desc = get_eventdesc_from_mincult(place_id, org_id, event_json)
-        except Exception as e:
-            log_preparing_mincult_error(min_id, e)
-            return done_list, error_list
-
-        evendate_url, evendate_id = evendate_api.put_event_to_evendate(even_id, event_desc)
-        if evendate_url is not None:
-            done_list.append(evendate_url)
+        result = update_event(org_id, min_id, even_id)
+        if result is not None:
+            done_list.append("min_id: {}, even_id: {}".format(min_id, even_id))
         else:
             error_list.append("place_id: {}, _id: {}".format(place_id, min_id))
 
     return done_list, error_list
+
+
+def update_event(org_id, min_id, even_id):
+    try:
+        event_json = get_event_from_mincult(min_id)
+    except Exception as e:
+        log_loading_mincult_event_error(min_id, e)
+        return False
+
+    try:
+        event_desc = get_eventdesc_from_mincult(org_id, event_json)
+    except Exception as e:
+        log_preparing_mincult_error(min_id, e)
+        return False
+
+    evendate_url, evendate_id = evendate_api.put_event_to_evendate(even_id, event_desc)
+
+    if evendate_url is not None:
+        return True
+    else:
+        return False
 
 
 def update_all():
