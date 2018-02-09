@@ -163,7 +163,7 @@ def sync_stats(place_id, org_id):
         print(get_update_stats_res(res))
         print("synced stats for org mincult_id: {}, evendate_id: {}".format(place_id, org_id))
         print("Synced stats for {}".format(len(done_list)))
-        return True, get_update_stats_res(stats)
+        return True, get_update_stats_res(res)
     else:
         error = "Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id)
         error_list.append(error)
