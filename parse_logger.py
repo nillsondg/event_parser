@@ -45,7 +45,7 @@ def log_loading_mincult_event_error(event_id, e):
 
 def log_preparing_mincult_error(place_id, e):
     print("ERROR PREPARING MINCULT EVENT", e)
-    fast_send_email("Error preparing mincult event " + str(place_id), "ERROR LOADING MINCULT EVENTS " + str(e))
+    fast_send_email("Error preparing mincult event " + str(place_id), "ERROR PREPARING MINCULT EVENTS " + str(e))
 
 
 def get_email_server():
