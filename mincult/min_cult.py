@@ -123,7 +123,7 @@ def process_org(place_id, org_id):
         if _id in done_events.keys():
             continue
         try:
-            event_desc = get_eventdesc_from_mincult(place_id, org_id, event)
+            event_desc = get_eventdesc_from_mincult(org_id, event)
         except Exception as e:
             log_preparing_mincult_error(_id, e)
             return done_list, error_list
@@ -147,32 +147,33 @@ def sync_stats(place_id, org_id):
     for mincult_id, evendate_id in done_events.items():
         event_stats = evendate_api.get_stats(evendate_id)
         if event_stats is None:
-            error_list.append(
-                "Error getting stats to mincult for event mincult_id {}, evendate_id: {}".format(mincult_id,
-                                                                                                 evendate_id))
-            return False
+            error = "Error getting stats to mincult for event mincult_id {}, evendate_id: {}".format(mincult_id,
+                                                                                                     evendate_id)
+            error_list.append(error)
+            return False, error
         prepared_stats = prepare_stats(mincult_id, evendate_id, event_stats)
         stats["items"].append(prepared_stats)
         done_list.append(evendate_api.format_evendate_event_url(evendate_id))
     if len(stats["items"]) == 0:
-        print("Nothing to sync for mincult_id: {}, evendate_id: {}".format(place_id, org_id))
-        return True
+        error = "Nothing to sync for mincult_id: {}, evendate_id: {}".format(place_id, org_id)
+        print(error)
+        return True, error
     res = post_stats(stats)
     if res is not None:
-        print_update_stats_res(res)
+        print(get_update_stats_res(res))
         print("synced stats for org mincult_id: {}, evendate_id: {}".format(place_id, org_id))
         print("Synced stats for {}".format(len(done_list)))
-        return True
+        return True, get_update_stats_res(stats)
     else:
-        error_list.append(
-            "Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id))
-        print("Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id))
-        return False
+        error = "Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id)
+        error_list.append(error)
+        print(error)
+        return False, error
 
 
-def print_update_stats_res(res_json):
-    print("Updated: {}. Not Found: {}".format(res_json["result"]["updated"]["count"],
-                                              res_json["result"]["notFound"]["count"]))
+def get_update_stats_res(res_json):
+    return "Updated: {}. Not Found: {}".format(res_json["result"]["updated"]["count"],
+                                               res_json["result"]["notFound"]["count"])
 
 
 def prepare_stats(min_event_id, event_id, evendate_stats_json):
@@ -202,8 +203,8 @@ def process_all():
     updated_list = []
     for min_id, even_id in exist_orgs.items():
         res_sync = sync_stats(min_id, even_id)
-        if res_sync:
-            done_stat_list.append(min_id)
+        if res_sync[0]:
+            done_stat_list.append(min_id, res_sync[1])
         else:
             error_stat_list.append(min_id)
         done, errors = process_org(min_id, even_id)
@@ -287,10 +288,10 @@ def prepare_msg_text(done_list, error_list, update_list):
 
 def prepare_msg_sync_text(done_list, error_list):
     text = ""
-    for url in done_list:
-        text += "SYNCED {}\r\n".format(url)
-    for url in error_list:
-        text += "ERROR {}\r\n".format(url)
+    for min_id, msg in done_list:
+        text += "SYNCED {}| {}\r\n".format(min_id, msg)
+    for min_id, error_msg in error_list:
+        text += "ERROR {}| {}\r\n".format(min_id, error_msg)
     return text
 
 
