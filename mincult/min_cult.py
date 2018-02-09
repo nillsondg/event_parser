@@ -317,9 +317,8 @@ def find_removed_events(place_ids):
     for place_id in place_ids:
         done_events = read_mincult_events_from_file(place_id)
         for min_id, even_id in done_events.items():
-            try:
-                get_event_from_mincult(min_id)
-            except KeyError:
+            res = get_event_from_mincult(min_id)
+            if res is None:
                 removed_events.append("NotFound min_id {} | even_id {}".format(min_id, even_id))
     for removed in removed_events:
         print(removed + "\r\n")
