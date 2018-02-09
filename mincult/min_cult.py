@@ -310,3 +310,17 @@ def prepare_msg_update_text(done_list, error_list):
     for url in error_list:
         text += "ERROR {}\r\n".format(url)
     return text
+
+
+def find_removed_events(place_ids):
+    removed_events = []
+    for place_id in place_ids:
+        done_events = read_mincult_events_from_file(place_id)
+        for min_id, even_id in done_events.items():
+            try:
+                get_event_from_mincult(min_id)
+            except KeyError:
+                removed_events.append("NotFound min_id {} | even_id {}".format(min_id, even_id))
+    for removed in removed_events:
+        print(removed + "\r\n")
+    print("NotFound len = " + str(len(removed_events)))
