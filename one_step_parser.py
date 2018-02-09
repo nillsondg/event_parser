@@ -111,7 +111,10 @@ def parse_from_cinemapark():
                 end_date = date.replace(hour=23, minute=59) + datetime.timedelta(day)
                 dates.append((start_date, end_date))
         else:
-            raise ValueError("Can't parse date " + date_raw)
+            # raise ValueError("Can't parse date " + date_raw)
+            print("Can't parse date " + date_raw)
+            parse_logger.log_event_parsing_error(url, "Can't parse date " + date_raw)
+            continue
 
         def get_description(film_url):
             time.sleep(5)
