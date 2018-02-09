@@ -204,9 +204,9 @@ def process_all():
     for min_id, even_id in exist_orgs.items():
         res_sync = sync_stats(min_id, even_id)
         if res_sync[0]:
-            done_stat_list.append(min_id, res_sync[1])
+            done_stat_list.append((min_id, res_sync[1]))
         else:
-            error_stat_list.append(min_id)
+            error_stat_list.append((min_id, res_sync[1]))
         done, errors = process_org(min_id, even_id)
         done_list.extend(done)
         error_list.extend(errors)
