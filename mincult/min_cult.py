@@ -52,7 +52,7 @@ def get_eventdesc_from_mincult(org_id, event_json):
             end_time = day[1].strftime('%H:%M')
             if day[0].day != day[1].day:
                 end_time = "23:59"
-                event_date2 = day[0].strftime('%Y-%m-%d')
+                event_date2 = day[1].strftime('%Y-%m-%d')
                 start_time2 = "00:00"
                 end_time2 = day[1].strftime('%H:%M')
                 date2 = {"event_date": event_date2, "start_time": start_time2, "end_time": end_time2}
@@ -310,8 +310,3 @@ def prepare_msg_update_text(done_list, error_list):
     for url in error_list:
         text += "ERROR {}\r\n".format(url)
     return text
-
-
-res = get_event_from_mincult(195973)
-event = get_eventdesc_from_mincult(0, res)
-event
