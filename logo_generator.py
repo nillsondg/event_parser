@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 import re
 from transliterate import translit
 from random import randint
@@ -10,22 +10,30 @@ def get_string(title):
     r = re.findall('([А-ЯA-Z])', title)
     try:
         return r[0] + r[1] + r[2]
-    except KeyError:
+    except IndexError:
         try:
             return r[0] + r[1]
-        except KeyError:
+        except IndexError:
             return title[:2].capitalize()
 
 
 def generate_logo(title):
-    img_w, img_h = (500, 500)
+    size = (500, 500)
+    img_w, img_h = size
     img = Image.new('RGB', (img_w, img_h), color=(get_color_int(), get_color_int(), get_color_int()))
     d = ImageDraw.Draw(img)
-    fnt = ImageFont.truetype(get_font_path(), 208)
-    w, h = d.textsize(translit(get_string(title), 'ru', reversed=True).capitalize(), font=fnt)
-    d.text(((img_w - w) / 2, (img_h - h) / 2), get_string(title), font=fnt, fill=(255, 255, 255))
+    text = get_string(title)
+    fnt = ImageFont.truetype(get_font_path(), get_font_size(text))
+    w, h = d.textsize(text, font=fnt)
+    d.text(((img_w - w) / 2, (img_h - h) / 2), text, font=fnt, fill=(255, 255, 255))
+
+    mask = Image.new('L', size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0) + size, fill=255)
+    output = ImageOps.fit(img, mask.size, centering=(0.5, 0.5))
+    output.putalpha(mask)
     img_raw = BytesIO()
-    img.save(img_raw, format='PNG')
+    output.save(img_raw, format='PNG')
     return img_raw.getvalue()
 
 
@@ -38,3 +46,14 @@ def get_font_path():
         return 'C:\Windows\Fonts\Roboto-Medium.ttf'
     elif sys.platform.startswith('darwin'):
         return '/Library/Fonts/Roboto-Medium.ttf'
+
+
+def get_font_size(result_title):
+    if len(result_title) == 2:
+        return 208
+    else:
+        return 188
+
+
+with open("img.png", "wb") as f:
+    f.write(generate_logo("цик"))
