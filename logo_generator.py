@@ -33,6 +33,6 @@ def get_color_int():
 
 def get_font_path():
     if sys.platform.startswith('win32'):
-        return 'C://Windows/Fonts/Roboto-Medium.ttf'
+        return 'C:\Windows\Fonts\Roboto-Medium.ttf'
     elif sys.platform.startswith('darwin'):
         return '/Library/Fonts/Roboto-Medium.ttf'
