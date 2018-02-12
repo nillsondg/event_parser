@@ -52,7 +52,7 @@ def get_default_img(img_name="evendate.png", ext="png"):
     return image_horizontal, img_name
 
 
-def prepare_cropped_img(img, extension):
+def prepare_img(img, extension):
     import base64
     img = "data:{};base64,".format(extension) + base64.b64encode(img).decode("utf-8")
     filename = "image." + extension

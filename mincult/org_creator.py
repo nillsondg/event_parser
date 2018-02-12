@@ -5,7 +5,8 @@ from bs4 import BeautifulSoup
 from evendate_api import post_org_to_evendate, update_org_in_evendate
 from mincult import mincult_api, min_cult_utils
 from file_keeper import write_mincult_orgs_to_file, read_mincult_ors_from_file, read_mincult_ignored_orgs
-from utils import get_img, get_default_img
+from utils import get_img, get_default_img, prepare_img
+from logo_generator import generate_logo
 
 
 def get_type(type):
@@ -108,7 +109,7 @@ def prepare_org(org_desc):
         image_horizontal = "data:image/{};base64,".format(ext) + encoded_string.decode("utf-8")
         return image_horizontal, img_name
 
-    logo, logo_filename = get_default_logo()
+    logo, logo_filename = prepare_img(generate_logo(short_name), "png")
 
     org = {"name": name,
            "short_name": short_name,
