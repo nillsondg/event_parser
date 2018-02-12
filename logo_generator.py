@@ -22,7 +22,7 @@ def generate_logo(title):
     w, h = d.textsize(translit(get_string(title).capitalize(), 'ru', reversed=True), font=fnt)
     d.text(((img_w - w) / 2, (img_h - h) / 2), get_string(title), font=fnt, fill=(255, 255, 255))
     img_raw = BytesIO()
-    d.save(img_raw, format='PNG')
+    img.save(img_raw, format='PNG')
     return img_raw.getvalue()
 
 
