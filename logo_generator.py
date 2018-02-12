@@ -3,6 +3,7 @@ import re
 from transliterate import translit
 from random import randint
 from io import BytesIO
+import sys
 
 
 def get_string(title):
@@ -18,7 +19,7 @@ def generate_logo(title):
     img_w, img_h = (500, 500)
     img = Image.new('RGB', (img_w, img_h), color=(get_color_int(), get_color_int(), get_color_int()))
     d = ImageDraw.Draw(img)
-    fnt = ImageFont.truetype('/Library/Fonts/Roboto-Medium.ttf', 208)
+    fnt = ImageFont.truetype(get_font_path(), 208)
     w, h = d.textsize(translit(get_string(title).capitalize(), 'ru', reversed=True), font=fnt)
     d.text(((img_w - w) / 2, (img_h - h) / 2), get_string(title), font=fnt, fill=(255, 255, 255))
     img_raw = BytesIO()
@@ -28,3 +29,10 @@ def generate_logo(title):
 
 def get_color_int():
     return randint(100, 200)
+
+
+def get_font_path():
+    if sys.platform.startswith('win32'):
+        return 'C://Windows/Fonts/Roboto-Medium.ttf'
+    elif sys.platform.startswith('darwin'):
+        return '/Library/Fonts/Roboto-Medium.ttf'
