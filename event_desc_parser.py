@@ -1465,20 +1465,20 @@ def __parse_exhibition_desc_from_mamm(url):
         # 9.02—1.05.2018
         date_container = g.doc.select('//span[@class="dates smallcaps"]').node()
         date_raw = BeautifulSoup(tostring(date_container), "lxml").text
-        interval_pattern = re.compile('(\d{1,2}).(\d{1,2})[—–](\d{1,2}).(\d{1,2}).(\d{4})')
+        interval_pattern = re.compile('(\d{1,2}).(\d{1,2}).?(\d{4})?[—–](\d{1,2}).(\d{1,2}).(\d{4})')
         interval_match = interval_pattern.match(date_raw)
         if interval_match:
             start_month = int(interval_match.group(2))
-            end_month = int(interval_match.group(4))
+            end_month = int(interval_match.group(5))
 
             start_day = int(interval_match.group(1))
-            end_day = int(interval_match.group(3))
-            start_year = interval_match.group(5)
+            end_day = int(interval_match.group(4))
+            start_year = interval_match.group(3)
+            end_year = int(interval_match.group(6))
             if start_year:
                 start_year = int(start_year)
             else:
                 start_year = datetime.datetime.today().year
-            end_year = start_year
 
             start_hours, start_minutes = 0, 0
             end_hours, end_minutes = 23, 59
@@ -1529,6 +1529,3 @@ def parse_desc_from_mamm(url):
         return __parse_exhibition_desc_from_mamm(url)
     else:
         return __parse_event_desc_from_mamm(url)
-
-
-parse_desc_from_mamm("http://www.mamm-mdf.ru/events/detail/-intensiv-kurs-foto-dlya-nachinayushchikh/")
