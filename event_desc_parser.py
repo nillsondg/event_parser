@@ -1375,7 +1375,9 @@ def __parse_event_desc_from_mamm(url):
     def get_dates():
         # 03/II 13:00. МАММ.ул. Остоженка, 16
         date_container = g.doc.select('//div[@class="txt1"]').node()
-        date_raw = date_container.xpath('.//span')[0].tail
+        date_raw = date_container.xpath('.//span')[0].tail.strip()
+        if not date_raw:
+            date_raw = date_container.xpath('.//span')[1].tail.strip()
 
         one_day_pattern = re.compile('(\d{1,2})/([IVX]{1,4})\s*(\d{2}):(\d{2})')
         match = one_day_pattern.match(date_raw)
@@ -1527,3 +1529,6 @@ def parse_desc_from_mamm(url):
         return __parse_exhibition_desc_from_mamm(url)
     else:
         return __parse_event_desc_from_mamm(url)
+
+
+parse_desc_from_mamm("http://www.mamm-mdf.ru/events/detail/-intensiv-kurs-foto-dlya-nachinayushchikh/")
