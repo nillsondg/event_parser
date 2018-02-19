@@ -108,7 +108,7 @@ def process_all():
     process_strelka()
     process_digital_october()
     process_planetarium()
-    process_tretyako()
+    # process_tretyako()
     process_garage()
     process_yandex()
     process_flacon()

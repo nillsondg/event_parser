@@ -308,7 +308,7 @@ def parse_all():
     parse_from_garage()
     parse_from_planetarium()
     parse_from_digit_october()
-    parse_from_tretyako()
+    # parse_from_tretyako()
     parse_from_yandex()
     parse_from_flacon()
     parse_from_vinzavod()

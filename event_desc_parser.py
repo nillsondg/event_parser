@@ -1527,7 +1527,3 @@ def parse_desc_from_mamm(url):
         return __parse_exhibition_desc_from_mamm(url)
     else:
         return __parse_event_desc_from_mamm(url)
-
-
-parse_desc_from_vinzavod(
-    "http://www.winzavod.ru/calendar/workshop/maslenichnye-master-klassy-v-tvorcheskikh-masterskikh/")
