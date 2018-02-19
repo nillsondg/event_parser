@@ -1425,9 +1425,13 @@ def __parse_event_desc_from_mamm(url):
 
     place = "ул. Остоженка, 16"
 
-    ticket_block = g.doc.select('//div[@id="tiketPayDiv"]').node()
-    price = ticket_block.xpath(".//td")[0].text
-    price = re.search("\\d+", price).group(0)
+    def get_price():
+        try:
+            ticket_block = g.doc.select('//div[@id="tiketPayDiv"]').node()
+        except IndexError:
+            return 0
+        price = ticket_block.xpath(".//td")[0].text
+        return re.search("\\d+", price).group(0)
 
     try:
         img_url = g.doc.select('//meta[@property="og:image"]').node().get("content").strip()
@@ -1439,7 +1443,7 @@ def __parse_event_desc_from_mamm(url):
 
     res = {"organization_id": org_id, "title": get_title(), "dates": prepare_date(get_dates()),
            "description": prepare_desc(get_description()), "location": place, "tags": get_tags(),
-           "price": price,
+           "price": get_price(),
            "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
@@ -1496,8 +1500,10 @@ def __parse_exhibition_desc_from_mamm(url):
             raise ValueError("Can't parse date " + date_raw)
 
     def get_description():
-        event_description_block = g.doc.select('//div[@id="for_press_0"]').node()
-
+        try:
+            event_description_block = g.doc.select('//div[@id="for_press_0"]').node()
+        except IndexError:
+            return get_title()
         texts = event_description_block.xpath('.//p')
         description = ""
         for text_elem in texts:
@@ -1525,7 +1531,10 @@ def __parse_exhibition_desc_from_mamm(url):
 
 
 def parse_desc_from_mamm(url):
-    if "/exhibition" in url:
+    if "/exhibitions" in url:
         return __parse_exhibition_desc_from_mamm(url)
     else:
         return __parse_event_desc_from_mamm(url)
+
+
+parse_desc_from_mamm("http://www.mamm-mdf.ru/events/detail/cvet-v-zhivopisi/")
