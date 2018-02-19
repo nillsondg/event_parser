@@ -100,6 +100,10 @@ def process_ditelegraph():
     __process_bunch("ditelegraph.txt", "DI Telegraph", event_desc_parser.parse_desc_from_ditelegraph)
 
 
+def process_mamm():
+    __process_bunch("mamm.txt", "Mamm", event_desc_parser.parse_desc_from_mamm)
+
+
 def process_all():
     process_strelka()
     process_digital_october()
@@ -114,3 +118,4 @@ def process_all():
     process_centermars()
     process_mail()
     process_ditelegraph()
+    process_mamm()

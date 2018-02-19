@@ -156,7 +156,7 @@ def parse_desc_from_digit_october(url):
     img = "data:image/png;base64," + base64.b64encode(img_raw.content).decode("utf-8")
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates), "description": prepare_desc(text),
-           "location": map_text, "price": price, "tags": tags, "detail_info_url": url,
+           "location": map_text, "tags": tags, "detail_info_url": url,
            "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': "image.png"}}
     return res
@@ -201,7 +201,7 @@ def parse_desc_from_planetarium(url):
 
     return {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
             "description": prepare_desc(description),
-            "location": location, "price": price, "tags": tags, "detail_info_url": url,
+            "location": location, "tags": tags, "detail_info_url": url,
             "public_at": get_public_date(), "image_horizontal": img,
             "filenames": {'horizontal': filename}}
 
@@ -282,7 +282,7 @@ def parse_desc_from_strelka(url):
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
            "description": prepare_desc(description),
-           "location": place, "price": price, "tags": tags, "detail_info_url": url,
+           "location": place, "tags": tags, "detail_info_url": url,
            "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
@@ -354,7 +354,7 @@ def parse_desc_from_tretyako(url):
         img, filename = get_default_img("tretyako.jpg", "jpg")
 
     res = {"organization_id": org_id, "title": prepare_title(title), "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": place, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
@@ -492,7 +492,7 @@ def __parse_event_desc_from_garage(url):
         img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": place, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
@@ -561,7 +561,7 @@ def __parse_exhibition_desc_from_garage(url):
         img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": place, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": place, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
@@ -660,7 +660,7 @@ def parse_desc_from_yandex(url):
     img, filename = get_default_img("yandex.jpg", "jpg")
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": map_text, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -792,7 +792,7 @@ def parse_desc_from_flacon(url):
         img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": map_text, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -923,7 +923,7 @@ def parse_desc_from_vinzavod(url):
         img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": map_text, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -1035,7 +1035,7 @@ def parse_desc_from_gorky_park(url):
     img, filename = get_img(img_url)
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": map_text, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -1109,7 +1109,7 @@ def parse_desc_from_artplay(url):
     img, filename = get_default_img("artplay.png")
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": map_text, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -1179,7 +1179,7 @@ def parse_desc_from_centermars(url):
         img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
-           "description": prepare_desc(description), "location": map_text, "price": price, "tags": tags,
+           "description": prepare_desc(description), "location": map_text, "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -1264,7 +1264,7 @@ def parse_desc_from_mail(url):
         img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates), "location": map_text,
-           "description": prepare_desc(description), "price": price, "tags": tags,
+           "description": prepare_desc(description), "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
@@ -1343,8 +1343,183 @@ def parse_desc_from_ditelegraph(url):
         img, filename = get_default_img()
 
     res = {"organization_id": org_id, "title": title, "dates": prepare_date(dates), "location": map_text,
-           "description": prepare_desc(description), "price": price, "tags": tags,
+           "description": prepare_desc(description), "tags": tags,
            "detail_info_url": url, "public_at": get_public_date(),
            "image_horizontal": img,
            "filenames": {'horizontal': filename}}
     return res
+
+
+def __parse_event_desc_from_mamm(url):
+    base_url = "http://mamm-mdf.ru"
+    org_id = 10
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    def get_title():
+        main_block = g.doc.select('//div[@class="lBlock1"]').node()
+        raw_title = main_block.xpath('.//h2[@class="smallcaps"]')[0]
+        return BeautifulSoup(tostring(raw_title), "lxml").text
+
+    def get_tags():
+        tag_container = g.doc.select('//div[@class="txt1"]').node()
+        tag = tag_container.xpath('.//span')[0].text
+        return ["Mamm", tag]
+
+    def get_dates():
+        # 03/II 13:00. МАММ.ул. Остоженка, 16
+        date_container = g.doc.select('//div[@class="txt1"]').node()
+        date_raw = date_container.xpath('.//span')[0].tail
+
+        one_day_pattern = re.compile('(\d{1,2})/([IVX]{1,4})\s*(\d{2}):(\d{2})')
+        match = one_day_pattern.match(date_raw)
+        if match:
+            month = int(convert_roman_month(match.group(2)))
+            day = int(match.group(1))
+            year = datetime.datetime.today().year
+            if month < datetime.datetime.today().month and month == 1:
+                year += 1
+            hours = int(match.group(3))
+            minutes = int(match.group(4))
+            date = datetime.datetime(year=year, month=month, day=day, hour=hours, minute=minutes)
+            end_date = date.replace(hour=date.hour + 2)
+            if end_date.hour > date.hour:
+                end_date.replace(hour=23, minute=59)
+
+            return [(date, end_date)]
+        raise ValueError("Can't parse date " + date_raw)
+
+    def convert_roman_month(month):
+        return {
+            "I": 1,
+            "II": 2,
+            "III": 3,
+            "IV": 4,
+            "V": 5,
+            "VI": 6,
+            "VII": 7,
+            "VIII": 8,
+            "IX": 9,
+            "X": 10,
+            "XI": 11,
+            "XII": 12,
+        }[month]
+
+    def get_description():
+        event_description_block = g.doc.select('//div[@class="lBlock1"]').node()
+
+        texts = event_description_block.xpath('.//big | .//b | .//p[not(ancestor::div/@class = "txt1")]')
+        description = ""
+        for text_elem in texts:
+            if text_elem.text is not None:
+                description += BeautifulSoup(tostring(text_elem), "lxml").text
+        return description
+
+    place = "ул. Остоженка, 16"
+
+    ticket_block = g.doc.select('//div[@id="tiketPayDiv"]').node()
+    price = ticket_block.xpath(".//td")[0].text
+    price = re.search("\\d+", price).group(0)
+
+    try:
+        img_url = g.doc.select('//meta[@property="og:image"]').node().get("content").strip()
+        if not img_url.startswith("http") and not img_url.startswith("https"):
+            img_url = base_url + img_url
+        img, filename = get_img(img_url)
+    except IndexError:
+        img, filename = get_default_img()
+
+    res = {"organization_id": org_id, "title": get_title(), "dates": prepare_date(get_dates()),
+           "description": prepare_desc(get_description()), "location": place, "tags": get_tags(),
+           "price": price,
+           "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def __parse_exhibition_desc_from_mamm(url):
+    base_url = "http://mamm-mdf.ru"
+    org_id = 10
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    def get_title():
+        main_block = g.doc.select('//div[@class="block1"]').node()
+        raw_title = main_block.xpath('.//div[@class="title smallcaps"]')[0]
+        return BeautifulSoup(tostring(raw_title), "lxml").text
+
+    def get_tags():
+        return ["Mamm", "выставка"]
+
+    def get_dates():
+        # 9.02—1.05.2018
+        date_container = g.doc.select('//span[@class="dates smallcaps"]').node()
+        date_raw = BeautifulSoup(tostring(date_container), "lxml").text
+        interval_pattern = re.compile('(\d{1,2}).(\d{1,2})[—–](\d{1,2}).(\d{1,2}).(\d{4})')
+        interval_match = interval_pattern.match(date_raw)
+        if interval_match:
+            start_month = int(interval_match.group(2))
+            end_month = int(interval_match.group(4))
+
+            start_day = int(interval_match.group(1))
+            end_day = int(interval_match.group(3))
+            start_year = interval_match.group(5)
+            if start_year:
+                start_year = int(start_year)
+            else:
+                start_year = datetime.datetime.today().year
+            end_year = start_year
+
+            start_hours, start_minutes = 0, 0
+            end_hours, end_minutes = 23, 59
+            date = datetime.datetime(year=start_year, month=start_month, day=start_day, hour=start_hours,
+                                     minute=start_minutes)
+            last_date = datetime.datetime(year=end_year, month=end_month, day=end_day, hour=end_hours,
+                                          minute=end_minutes)
+            dates = []
+            for day in range((last_date - date).days + 1):
+                start_date = date + datetime.timedelta(day)
+                end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
+                dates.append((start_date, end_date))
+            return dates
+        else:
+            raise ValueError("Can't parse date " + date_raw)
+
+    def get_description():
+        event_description_block = g.doc.select('//div[@id="for_press_0"]').node()
+
+        texts = event_description_block.xpath('.//p')
+        description = ""
+        for text_elem in texts:
+            if text_elem.text is not None:
+                description += BeautifulSoup(tostring(text_elem), "lxml").text
+        return description
+
+    place = "ул. Остоженка, 16"
+
+    price = 0
+
+    try:
+        img_url = g.doc.select('//meta[@property="og:image"]').node().get("content").strip()
+        if not img_url.startswith("http") and not img_url.startswith("https"):
+            img_url = base_url + img_url
+        img, filename = get_img(img_url)
+    except IndexError:
+        img, filename = get_default_img()
+
+    res = {"organization_id": org_id, "title": get_title(), "dates": prepare_date(get_dates()),
+           "description": prepare_desc(get_description()), "location": place, "tags": get_tags(),
+           "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res
+
+
+def parse_desc_from_mamm(url):
+    if "/exhibition" in url:
+        return __parse_exhibition_desc_from_mamm(url)
+    else:
+        return __parse_event_desc_from_mamm(url)

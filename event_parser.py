@@ -272,6 +272,33 @@ def parse_from_ditelegraph():
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
 
 
+def parse_from_mamm():
+    file_name = "mamm.txt"
+    exb_url = "http://www.mamm-mdf.ru/exhibitions/"
+    events_url = "http://www.mamm-mdf.ru/events/"
+    base_url = "http://www.mamm-mdf.ru"
+
+    main_pattern = '//div[@class="calendar"]'
+    events_pattern = './/div[@class="item"]'
+    main_exb_pattern = '//div[@class="exhibit newexhibit"]'
+    exhibitions_pattern = './/div[@class="small"]'
+
+    def url_getter(event):
+        url = event.xpath('.//a')[0].get("href")
+        if not url.startswith("http"):
+            url = base_url + url
+        return url
+
+    def url_exh_getter(exhibition):
+        url = exhibition.xpath('.//a[@class="smallcaps"]')[0].get("href")
+        if not url.startswith("http"):
+            url = base_url + url
+        return url
+
+    parse_from_site(file_name, events_url, base_url, main_pattern, events_pattern, url_getter)
+    parse_from_site(file_name, exb_url, base_url, main_exb_pattern, exhibitions_pattern, url_exh_getter)
+
+
 def parse_all():
     try:
         parse_from_strelka()
@@ -290,3 +317,4 @@ def parse_all():
     parse_from_center_mars()
     parse_from_mail()
     parse_from_ditelegraph()
+    parse_from_mamm()
