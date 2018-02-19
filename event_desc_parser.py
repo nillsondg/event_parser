@@ -725,7 +725,7 @@ def parse_desc_from_flacon(url):
         end_hours, end_minutes = 23, 59
 
     one_day_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)\s*(\d{4})?')
-    interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*[—–]\s*(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
+    interval_pattern = re.compile('(\d{1,2})\s*([А-Яа-я]*)?\s*[-—–]\s*(\d{1,2}) ([А-Яа-я]*)\s*(\d{4})?')
     match = one_day_pattern.match(date_raw)
     interval_match = interval_pattern.match(date_raw)
     if interval_match:
@@ -807,7 +807,11 @@ def parse_desc_from_vinzavod(url):
     g.go(url)
     print("parse " + url)
 
-    title = g.doc.select('//meta[@property="og:title"]').node().get("content").strip()
+    try:
+        title = g.doc.select('//meta[@property="og:title"]').node().get("content").strip()
+    except IndexError:
+        title_block = g.doc.select('//h2[@class="exhibition-type__name"]').node()
+        title = BeautifulSoup(tostring(title_block), "lxml").text.strip()
 
     date_block = g.doc.select('//div[@class="exhibition-type__date"]').node()
 
@@ -1523,3 +1527,7 @@ def parse_desc_from_mamm(url):
         return __parse_exhibition_desc_from_mamm(url)
     else:
         return __parse_event_desc_from_mamm(url)
+
+
+parse_desc_from_vinzavod(
+    "http://www.winzavod.ru/calendar/workshop/maslenichnye-master-klassy-v-tvorcheskikh-masterskikh/")

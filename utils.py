@@ -39,6 +39,8 @@ def get_img(url):
     extension = mimetypes.guess_extension(content_type)
     if extension == ".jpe":
         extension = ".jpeg"
+    if extension is None and content_type == 'image/jpg':
+        extension = ".jpg"
     img = "data:{};base64,".format(content_type) + base64.b64encode(crop_img_to_16x9(res.content)).decode("utf-8")
     filename = "image" + extension
     return img, filename
