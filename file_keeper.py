@@ -60,6 +60,27 @@ def read_ignored_urls():
     return __read_ignore_urls_from_file(events_desc_folder, "_ignore.txt")
 
 
+def read_canceled_events_from_file():
+    exist_orgs = dict()
+    file_name = "canceled.txt"
+    try:
+        with open(file_name) as f:
+            for line in f:
+                date, min_id, even_id = line.strip().split(' ')
+                exist_orgs[int(min_id)] = int(even_id)
+    except IOError:
+        pass
+    return exist_orgs
+
+
+def write_canceled_events_to_file(event_dict):
+    f = open("canceled.txt", 'a+')
+    for min_id, even_id in event_dict.items():
+        f.write(datetime.datetime.now().strftime("%y.%m.%d|%H:%M:%S ") + str(min_id) + " " + str(even_id) + "\n")
+        print("added", min_id, even_id)
+    f.close()
+
+
 # min cult
 def read_mincult_ors_from_file():
     exist_orgs = dict()

@@ -8,7 +8,8 @@ from evendate_api import format_evendate_event_url
 import time
 from utils import get_img
 from mincult import min_cult_utils
-from file_keeper import read_mincult_events_from_file, write_mincult_event_to_file, read_mincult_ors_from_file
+from file_keeper import read_mincult_events_from_file, write_mincult_event_to_file, read_mincult_ors_from_file, \
+    write_canceled_events_to_file, read_canceled_events_from_file
 
 
 def get_eventdesc_from_mincult(org_id, event_json):
@@ -150,9 +151,13 @@ def sync_stats(place_id, org_id):
     done_events = read_mincult_events_from_file(place_id)
     error_list = list()
     done_list = list()
+    canceled_events = read_canceled_events_from_file()
 
     stats = {"items": []}
     for mincult_id, evendate_id in done_events.items():
+        if mincult_id in canceled_events.keys():
+            print("Skip event mincult_id {}, evendate_id: {}".format(mincult_id, evendate_id))
+            continue
         event_stats = evendate_api.get_stats(evendate_id)
         if event_stats is None:
             error = "Error getting stats to mincult for event mincult_id {}, evendate_id: {}".format(mincult_id,
@@ -171,6 +176,8 @@ def sync_stats(place_id, org_id):
         print(get_update_stats_res(res))
         print("synced stats for org mincult_id: {}, evendate_id: {}".format(place_id, org_id))
         print("Synced stats for {}".format(len(done_list)))
+        if check_non_found_events_exist(res):
+            cancel_removed_events([place_id])
         return True, get_update_stats_res(res)
     else:
         error = "Error posting stats to mincult for org mincult_id {}, evendate_id: {}".format(place_id, org_id)
@@ -182,6 +189,13 @@ def sync_stats(place_id, org_id):
 def get_update_stats_res(res_json):
     return "Updated: {}. Not Found: {}".format(res_json["result"]["updated"]["count"],
                                                res_json["result"]["notFound"]["count"])
+
+
+def check_non_found_events_exist(res_json):
+    if res_json["result"]["notFound"]["count"] > 0:
+        return True
+    else:
+        return False
 
 
 def prepare_stats(min_event_id, event_id, evendate_stats_json):
@@ -312,7 +326,16 @@ def prepare_msg_update_text(done_list, error_list):
     return text
 
 
-def find_removed_events(place_ids):
+def cancel_removed_events(place_ids):
+    def cancel_event(min_event_id, event_id):
+        canceled = evendate_api.cancel_event(event_id)[0]
+        if canceled:
+            write_canceled_events_to_file({min_event_id: event_id})
+            print("Canceled")
+            fast_send_email("Canceled event", "CANCELED min_id {} | even_id {}".format(min_event_id, event_id))
+        else:
+            print("Error canceling")
+
     removed_events = []
     for place_id in place_ids:
         done_events = read_mincult_events_from_file(place_id)
@@ -320,6 +343,7 @@ def find_removed_events(place_ids):
             res = get_event_from_mincult(min_id)
             if res is None:
                 removed_events.append("NotFound min_id {} | even_id {}".format(min_id, even_id))
+                cancel_event(min_id, even_id)
     for removed in removed_events:
         print(removed + "\r\n")
     print("NotFound len = " + str(len(removed_events)))
