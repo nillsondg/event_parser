@@ -6,7 +6,6 @@ events_desc
 mincult_events
 *.pem
 out.html
-orgs.txt
 .DS_Store
 mincult/_ignore.txt
-update.txt
+*.txt
