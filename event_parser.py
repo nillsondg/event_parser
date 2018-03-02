@@ -87,13 +87,14 @@ def parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, u
 
 def parse_from_garage():
     do_url = "https://garagemca.org/ru/calendar"
+    exb_url = "https://garagemca.org/ru/exhibitions"
     file_name = "garage.txt"
     base_url = "https://garagemca.org"
 
     main_pattern = '//div[@class="calendar-events__container"]'
     events_pattern = './/div[@class="calendar-event"]'
-    main_exb_pattern = '//div[@class="calendar-exhibitions"]'
-    exhibitions_pattern = './/div[@class="calendar-event is-white"]'
+    main_exb_pattern = '//div[@class="card-list sectioned"]'
+    exhibitions_pattern = './/div[@class="flow__entry"]'
 
     def url_getter(event):
         url = event.xpath('.//a[@class="calendar-event__image"]')[0].get("href")
@@ -102,13 +103,13 @@ def parse_from_garage():
         return url
 
     def url_exh_getter(exhibition):
-        url = exhibition.xpath('.//a[contains(@class, "calendar-event__image")]')[0].get("href")
+        url = exhibition.xpath('.//a[contains(@class, "card__image-container")]')[0].get("href")
         if not url.startswith("https"):
             url = base_url + url
         return url
 
     parse_from_site(file_name, do_url, base_url, main_pattern, events_pattern, url_getter)
-    parse_from_site(file_name, do_url, base_url, main_exb_pattern, exhibitions_pattern, url_exh_getter)
+    parse_from_site(file_name, exb_url, base_url, main_exb_pattern, exhibitions_pattern, url_exh_getter)
 
 
 def parse_from_digit_october():

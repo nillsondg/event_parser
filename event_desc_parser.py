@@ -595,12 +595,16 @@ def parse_desc_from_yandex(url):
 
     # 5 ДЕКАБРЯ, 18:30
     # ДЕКАБРЬ
+    # 2 – 28 АПРЕЛЯ
     one_day_pattern = re.compile('\d{1,2} ([А-Яа-я]*), \d\d:\d\d')
     day_pattern = re.compile(('\d{1,2} ([А-Яа-я]*) (\d{4})'))
     month_pattern = re.compile('([А-Яа-я]*)')
     match = one_day_pattern.match(datetime_raw)
     day_match = day_pattern.match(datetime_raw)
     month_match = month_pattern.match(datetime_raw)
+    interval_pattern = re.compile('(\d{1,2})\s*[-–]\s*(\d{1,2})\s*([А-Яа-я]*)')
+    interval_match = interval_pattern.match(datetime_raw)
+
     if match:
         month = match.group(1)
         date_str = datetime_raw.replace(month, str(month_to_num(month)))
@@ -622,6 +626,25 @@ def parse_desc_from_yandex(url):
         date = date.replace(hour=10)
         end_date = date + datetime.timedelta(hours=2)
         dates = [(date, end_date)]
+    elif interval_match:
+        month = month_to_num(interval_match.group(3))
+
+        start_day = int(interval_match.group(1))
+        end_day = int(interval_match.group(2))
+        year = datetime.datetime.today().year
+        if month < datetime.datetime.today().month and month == 1:
+            year += 1
+        start_hours, start_minutes = 0, 0
+        end_hours, end_minutes = 23, 59
+        date = datetime.datetime(year=year, month=month, day=start_day, hour=start_hours,
+                                 minute=start_minutes)
+        last_date = datetime.datetime(year=year, month=month, day=end_day, hour=end_hours,
+                                      minute=end_minutes)
+        dates = []
+        for day in range((last_date - date).days + 1):
+            start_date = date + datetime.timedelta(day)
+            end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
+            dates.append((start_date, end_date))
     elif month_match:
         month = month_to_num(month_match.group(1))
         year = datetime.datetime.today().year
@@ -1141,7 +1164,20 @@ def parse_desc_from_centermars(url):
 
     interval_pattern = re.compile('(\d{1,2}).(\d{1,2}).(\d{4})\s*[-—]\s*(\d{1,2}).(\d{1,2}).(\d{4})')
     interval_match = interval_pattern.match(datetime_raw)
-    if interval_match:
+
+    one_day_pattern = re.compile('(\d{1,2}).(\d{1,2}).(\d{4})\s*(\d\d):(\d\d)')
+    match = one_day_pattern.match(datetime_raw)
+    if match:
+        month = int(match.group(2))
+        day = int(match.group(1))
+        year = int(match.group(3))
+        hours = int(match.group(4))
+        minutes = int(match.group(5))
+        date = datetime.datetime(year=year, month=month, day=day, hour=hours,
+                                 minute=minutes)
+        end_date = date + datetime.timedelta(hours=2)
+        dates = [(date, end_date)]
+    elif interval_match:
         start_month = int(interval_match.group(2))
         end_month = int(interval_match.group(5))
 
@@ -1158,6 +1194,8 @@ def parse_desc_from_centermars(url):
             start_date = date + datetime.timedelta(day)
             end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
             dates.append((start_date, end_date))
+    else:
+        raise ValueError("Can't parse date " + datetime_raw)
 
     description = ""
     description_block = g.doc.select('//div[@class="b-prj-sgl__content content w-container "]').node()
@@ -1535,6 +1573,3 @@ def parse_desc_from_mamm(url):
         return __parse_exhibition_desc_from_mamm(url)
     else:
         return __parse_event_desc_from_mamm(url)
-
-
-parse_desc_from_mamm("http://www.mamm-mdf.ru/events/detail/cvet-v-zhivopisi/")

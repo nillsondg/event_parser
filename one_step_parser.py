@@ -32,6 +32,8 @@ def find_img_in_tmdb(title):
         movie = search.results[0]
     except IndexError:
         return None, None
+    if movie['poster_path'] is None:
+        return None, None
     return prepare_cropped_img(crop_img_to_16x9(load_img(get_tmdb_img_url(movie['poster_path']))), "png")
 
 
