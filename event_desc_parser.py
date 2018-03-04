@@ -85,7 +85,7 @@ def month_to_num(month):
         'декабря': 12,
         'декабрь': 12,
         'дек': 12
-    }[month]
+    }[month.lower()]
 
 
 def parse_digital_october_date(date_str):
@@ -1573,3 +1573,147 @@ def parse_desc_from_mamm(url):
         return __parse_exhibition_desc_from_mamm(url)
     else:
         return __parse_event_desc_from_mamm(url)
+
+
+def parse_desc_from_embjapan(url, xml):
+    base_url = "http://www.ru.emb-japan.go.jp"
+    org_id = 654
+
+    g = get_grab()
+    g.go(url)
+    print("parse " + url)
+
+    def get_title():
+        main_block = g.doc.select('//section[@class="article-area content-inner"]').node()
+        raw_title = main_block.xpath('.//h1[@class="ttl-article"]')[0]
+        return BeautifulSoup(tostring(raw_title), "lxml").text.strip()
+
+    def get_tags():
+        tags = ["Год Японии в России"]
+        for genre in xml["genre"].split(","):
+            tags.append(genre.strip())
+        return tags
+
+    def get_dates():
+
+        start_date = xml["start_date"]
+        # Cентябрь 2017 г
+        # 9 января
+        # Февраль
+        # 1
+        # None
+
+        end_date = xml["end_date"]
+        # 10 марта 2018 г.
+        # октябрь 2018 г.
+        # None
+        # 8, 25 февраля 2018 г.
+
+        date_pattern = re.compile('(\d{1,2})?\s*([А-Яа-я]*)?\s*(\d{4})?[А-Яа-я\w\s]*')
+        two_days_pattern = re.compile('(\d{1,2}),\s*(\d{1,2})\s*([А-Яа-я]*)\s*(\d{4})[А-Яа-я\w\s]*')
+        try:
+            start_match = date_pattern.match(start_date)
+        except TypeError:
+            start_match = None
+        try:
+            end_match = date_pattern.match(end_date)
+            two_days_match = two_days_pattern.match(end_date)
+        except TypeError:
+            end_match = None
+            two_days_match = None
+
+        last_date = None
+        first_date = None
+
+        start_hours, start_minutes = 0, 0
+        end_hours, end_minutes = 23, 59
+
+        if two_days_match:
+            day1 = int(two_days_match.group(1))
+            day2 = int(two_days_match.group(2))
+            month = int(month_to_num(two_days_match.group(3)))
+            year = int(two_days_match.group(4))
+            date1 = datetime.datetime(year=year, month=month, day=day1, hour=start_hours, minute=start_minutes)
+            date2 = datetime.datetime(year=year, month=month, day=day2, hour=start_hours, minute=start_minutes)
+
+            dates = []
+            end_date = date1.replace(hour=end_hours, minute=end_minutes)
+            dates.append((date1, end_date))
+            end_date = date2.replace(hour=end_hours, minute=end_minutes)
+            dates.append((date2, end_date))
+            return dates
+        elif end_match and end_date is not None:
+            day = int(end_match.group(1))
+            month = int(month_to_num(end_match.group(2)))
+            year = int(end_match.group(3))
+            last_date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
+
+        if start_match and start_date is not None:
+            if start_match.group(1):
+                day = int(start_match.group(1))
+            else:
+                day = 1
+            if start_match.group(2):
+                month = int(month_to_num(start_match.group(2)))
+            else:
+                month = last_date.month
+
+            if start_match.group(3):
+                year = int(start_match.group(3))
+            else:
+                year = last_date.year
+
+            first_date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)
+
+        if first_date is None:
+            first_date = last_date
+        if last_date is None:
+            last_date = first_date
+        dates = []
+        for day in range((last_date - first_date).days + 1):
+            date = first_date + datetime.timedelta(day)
+            end_date = date.replace(hour=end_hours, minute=end_minutes) + datetime.timedelta(day)
+            dates.append((date, end_date))
+        return dates
+        # else:
+        #     raise ValueError("Can't parse date " + date_raw)
+
+    def get_description():
+        description = ""
+        event_description_block = g.doc.select('//section[@class="article-text"]').node()
+        try:
+            text = event_description_block.xpath('.//p')[0]
+            description += BeautifulSoup(tostring(text), "lxml").text
+        except IndexError:
+            raise ValueError("Can't get description")
+        try:
+            texts = event_description_block.xpath('.//td')
+            for text_elem in texts:
+                if text_elem.text is not None:
+                    text_elem.text += "\r\n"
+                    description += BeautifulSoup(tostring(text_elem), "lxml").text
+        except IndexError:
+            pass
+        return description
+
+    def get_place():
+        try:
+            event_place_block = g.doc.select('//section[@class="article-text"]').node()
+            return event_place_block.xpath('.//p')[1].text.strip()
+        except IndexError:
+            # todo table
+            return "Москва"
+
+    try:
+        img_url = xml["image"]
+        if not img_url.startswith("http") and not img_url.startswith("https"):
+            img_url = base_url + img_url
+        img, filename = get_img(img_url)
+    except IndexError:
+        img, filename = get_default_img()
+
+    res = {"organization_id": org_id, "title": get_title(), "dates": prepare_date(get_dates()),
+           "description": prepare_desc(get_description()), "location": get_place(), "tags": get_tags(),
+           "detail_info_url": url, "public_at": get_public_date(), "image_horizontal": img,
+           "filenames": {'horizontal': filename}}
+    return res

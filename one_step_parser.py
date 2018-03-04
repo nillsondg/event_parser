@@ -13,6 +13,7 @@ import tmdbsimple as tmdb
 import config
 from utils import crop_img_to_16x9, get_img
 from file_keeper import write_completed_url, read_completed_urls, read_ignored_urls
+from parse_logger import log_catalog_error
 
 
 def get_grab():
@@ -53,6 +54,13 @@ def prepare_cropped_img(img, extension):
 
 
 def parse_from_cinemapark():
+    try:
+        __parse_from_cinemapark()
+    except Exception as e:
+        log_catalog_error("cinemapark.txt", e)
+
+
+def __parse_from_cinemapark():
     file_name = "cinemapark.txt"
     do_url = "http://www.cinemapark.ru/"
     base_url = "http://www.cinemapark.ru"
@@ -161,3 +169,56 @@ def parse_from_cinemapark():
     parse_logger.send_email(server, msg_header, event_creator.prepare_msg_text(done_list, error_list))
     server.close()
     print("end check " + do_url)
+
+
+def parse_from_embjapan():
+    file_name = "embjapan.txt"
+    base_url = "http://www.ru.emb-japan.go.jp"
+    xml_url = "http://www.ru.emb-japan.go.jp/japan2018/xml/event-ru.xml"
+    import urllib.request
+    import xmltodict
+    from event_desc_parser import parse_desc_from_embjapan
+
+    done_list = []
+    error_list = []
+
+    done_urls = read_completed_urls(file_name)
+    ignored_urls = read_ignored_urls()
+    skip_set = set(done_urls).union(set(ignored_urls))
+    try:
+        file = urllib.request.urlopen(xml_url)
+        data = file.read()
+        file.close()
+
+        data = xmltodict.parse(data)
+
+    except Exception as e:
+        log_catalog_error(file_name, e)
+        return
+    for event in data["catalog"]["event"]:
+        url = event["url"]
+        if event["area"] != "Москва":
+            continue
+        if url == "#":
+            continue
+        if not url.startswith("http"):
+            url = base_url + url
+        if url.find("www.ru.emb-japan.go.jp") == -1:
+            continue
+        if url in skip_set:
+            continue
+        desc = parse_desc_from_embjapan(url, event)
+
+        res_url, event_id = evendate_api.post_event_to_evendate(desc)
+        if res_url is not None:
+            write_completed_url(file_name, url)
+            done_list.append((res_url, url))
+        else:
+            error_list.append(url)
+        time.sleep(1)
+
+    server = parse_logger.get_email_server()
+    msg_header = event_creator.prepare_msg_header("Japan Year in Russia", done_list, error_list)
+    parse_logger.send_email(server, msg_header, event_creator.prepare_msg_text(done_list, error_list))
+    server.close()
+    print("end check " + xml_url)

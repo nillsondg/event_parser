@@ -19,6 +19,7 @@ def schedule():
     event_creator.process_all()
     print("Start processing cinemapark")
     one_step_parser.parse_from_cinemapark()
+    one_step_parser.parse_from_embjapan()
     print(str(datetime.today()) + "\tDone")
 
     t = Timer(secs, schedule)
