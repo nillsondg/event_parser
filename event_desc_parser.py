@@ -36,14 +36,27 @@ def prepare_title(title):
 
 
 def prepare_desc(desc):
+    desc = re.sub(r"(\r\n){3,}", "\r\n\r\n", desc)
+    desc = re.sub(r"(\n){3,}", "\n\n", desc)
+    desc = re.sub(r"[ ]{2}", " ", desc)
     if len(desc) > 2000:
         return desc[:2000]
     return desc
 
 
 def get_public_date():
+    now = datetime.datetime.today()
+    if 7 < now.hour < 20:
+        return now
+    public_date = now.replace(day=datetime.datetime.today().day, hour=7, minute=0, second=0, microsecond=0)
+    if now.hour >= 20:
+        public_date += datetime.timedelta(days=1)
+    return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def get_lazy_public_date():
     public_date = datetime.datetime.today() \
-        .replace(day=datetime.datetime.today().day, hour=14, minute=0, second=0, microsecond=0)
+        .replace(day=datetime.datetime.today().day, hour=11, minute=0, second=0, microsecond=0)
     public_date += datetime.timedelta(days=1)
     return public_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -202,7 +215,7 @@ def parse_desc_from_planetarium(url):
     return {"organization_id": org_id, "title": title, "dates": prepare_date(dates),
             "description": prepare_desc(description),
             "location": location, "tags": tags, "detail_info_url": url,
-            "public_at": get_public_date(), "image_horizontal": img,
+            "public_at": get_lazy_public_date(), "image_horizontal": img,
             "filenames": {'horizontal': filename}}
 
 
@@ -568,7 +581,7 @@ def __parse_exhibition_desc_from_garage(url):
 
 
 def parse_desc_from_garage(url):
-    if "/exhibition" in url:
+    if "/exhibition/" in url:
         return __parse_exhibition_desc_from_garage(url)
     else:
         return __parse_event_desc_from_garage(url)
@@ -918,17 +931,19 @@ def parse_desc_from_vinzavod(url):
     else:
         raise ValueError("Can't parse date " + date_raw)
 
-    description_block = g.doc.select('//div[contains(@class, "exhibition-detail-info__right")]').node()
-
     def parse_description():
         texts = description_block.xpath('.//p | .//ul')
         desc = ""
         for text_elem in texts:
-            desc += BeautifulSoup(tostring(text_elem), "lxml").text
-        return desc
+            desc += BeautifulSoup(tostring(text_elem), "lxml").text.strip()
+        if desc:
+            return desc
+        else:
+            return BeautifulSoup(tostring(description_block), "lxml").text.strip()
 
-    description = parse_description()
-    if description is "":
+    description_block = g.doc.select('//div[contains(@class, "exhibition-detail-info__right")]').node()
+    description = parse_description().strip()
+    if not description:
         description_block = g.doc.select(
             '//div[contains(@class, "place-description exhibition-detail__description--archive")]').node()
         description = parse_description()
@@ -938,7 +953,7 @@ def parse_desc_from_vinzavod(url):
     price = 0
 
     event_format = g.doc.select('//div[@class="exhibition-type__title"]').node().text
-    tags = ["винзавод", event_format]
+    tags = ["Винзавод", event_format.strip()]
 
     background_style = g.doc.select('//div[@class="exhibition-slider-bg exhibition-slider-bg--1"]').node().get("style")
     img_pattern = re.compile(r"url\(([\w\/\-.]*)\)")
