@@ -1699,7 +1699,11 @@ def parse_desc_from_embjapan(url, xml):
     def get_place():
         try:
             event_place_block = g.doc.select('//section[@class="article-text"]').node()
-            return event_place_block.xpath('.//p')[1].text.strip()
+            location = event_place_block.xpath('.//p')[1].text.strip()
+            if not location:
+                return "Москва"
+            else:
+                return location
         except IndexError:
             # todo table
             return "Москва"
