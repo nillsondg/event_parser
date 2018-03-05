@@ -47,7 +47,7 @@ def prepare_desc(desc):
 def get_public_date():
     now = datetime.datetime.today()
     if 7 < now.hour < 20:
-        return now
+        return now.strftime('%Y-%m-%dT%H:%M:%SZ')
     public_date = now.replace(day=datetime.datetime.today().day, hour=7, minute=0, second=0, microsecond=0)
     if now.hour >= 20:
         public_date += datetime.timedelta(days=1)
