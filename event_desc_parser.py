@@ -1658,7 +1658,10 @@ def parse_desc_from_embjapan(url, xml):
             dates.append((date2, end_date))
             return dates
         elif end_match and end_date is not None:
-            day = int(end_match.group(1))
+            if end_match.group(1):
+                day = int(end_match.group(1))
+            else:
+                day = 1
             month = int(month_to_num(end_match.group(2)))
             year = int(end_match.group(3))
             last_date = datetime.datetime(year=year, month=month, day=day, hour=start_hours, minute=start_minutes)

@@ -13,7 +13,7 @@ import tmdbsimple as tmdb
 import config
 from utils import crop_img_to_16x9, get_img
 from file_keeper import write_completed_url, read_completed_urls, read_ignored_urls
-from parse_logger import log_catalog_error
+from parse_logger import log_catalog_error, log_event_parsing_error
 
 
 def get_grab():
@@ -207,7 +207,11 @@ def parse_from_embjapan():
             continue
         if url in skip_set:
             continue
-        desc = parse_desc_from_embjapan(url, event)
+        try:
+            desc = parse_desc_from_embjapan(url, event)
+        except Exception as e:
+            log_event_parsing_error(url, e)
+            continue
 
         res_url, event_id = evendate_api.post_event_to_evendate(desc)
         if res_url is not None:
